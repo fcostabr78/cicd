@@ -42,6 +42,8 @@ jobs:
           echo "${{secrets.KEY_FILE}}" >> ~/.oci/key.pem
 
       - name: 'Instalar OCI CLI'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         run: |
           curl -L -O https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh
           chmod +x install.sh
