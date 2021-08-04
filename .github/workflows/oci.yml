@@ -38,8 +38,9 @@ jobs:
           echo "pass_phrase=${{secrets.OCI_PASSPHRASE}}" >> ~/.oci/config
           echo "region=${{secrets.OCI_REGION}}" >> ~/.oci/config
           echo "tenancy=${{secrets.TENANCY}}" >> ~/.oci/config
-          echo "key_file=~/.oci/oci_api_key.pem" >> ~/.oci/config
-          echo "${{secrets.KEY_FILE}}" >> ~/.oci/key.pem
+          echo "key_file=~/.oci/key.pem" >> ~/.oci/config
+          echo "${{secrets.OCI_KEY_FILE}}" >> ~/.oci/key.pem
+          echo "${{secrets.ID_RSA}}" >> ~/.oci/id_rsa.pub
 
       - name: 'Instalar OCI CLI'
         env:
@@ -51,7 +52,20 @@ jobs:
           echo "::add-path::/home/runner/bin"
           exec -l $SHELL
 
-      - name: 'Fix Config File Permissions'
+      - name: 'Corrigir permissoes de arquivos criados'
         run: |
           oci setup repair-file-permissions --file /home/runner/.oci/config
           oci setup repair-file-permissions --file /home/runner/.oci/key.pem
+
+      - name: 'Criar uma instancia'
+        run: |
+          oci compute instance launch --availability-domain "AHhM:US-ASHBURN-AD-1" \ 
+            -c ocid1.tenancy.oc1..aaaaaaaaqqzek25x6oc72fsf7pl5pxqipakzcual27u6db3njlq76p7jopna \
+            --shape "VM.Standard.E2.1" \ 
+            --display-name "CriadoDesdeGitHub" \ 
+            --image-id ocid1.image.oc1.iad.aaaaaaaatwjeakck3drug6mmutcz3msodjse56qxdtwnvehldu7yds66r2wq \ 
+            --ssh-authorized-keys-file /home/runner/.oci/id_rsa.pub \
+            --subnet-id ocid1.subnet.oc1.iad.aaaaaaaa36toqifidf37xsn4ha4dpow7im2io465o2f4cfjjls6ryhte2loq
+            --wait-for-state RUNNING \
+            --query "data.id" \
+            --raw-output
