@@ -32,13 +32,7 @@ jobs:
       - name: 'Cria o arquivo de configuracao com base no OCI'
         run: |
           mkdir ~/.oci
-          echo "[DEFAULT]" >> ~/.oci/config
-          echo "user=${{secrets.USER_OCID}}" >> ~/.oci/config
-          echo "fingerprint=${{secrets.OCI_FINGERPRINT}}" >> ~/.oci/config
-          echo "pass_phrase=${{secrets.OCI_PASSPHRASE}}" >> ~/.oci/config
-          echo "region=${{secrets.OCI_REGION}}" >> ~/.oci/config
-          echo "tenancy=${{secrets.TENANCY}}" >> ~/.oci/config
-          echo "key_file=~/.oci/key.pem" >> ~/.oci/config
+          echo "${{secrets.CONFIG}}" >> ~/.oci/config
           echo "${{secrets.OCI_KEY_FILE}}" >> ~/.oci/key.pem
           echo "${{secrets.ID_RSA}}" >> ~/.oci/id_rsa.pub
 
