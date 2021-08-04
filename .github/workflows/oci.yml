@@ -59,13 +59,11 @@ jobs:
 
       - name: 'Criar uma instancia'
         run: |
-          oci compute instance launch --availability-domain "AHhM:US-ASHBURN-AD-1" \ 
-            -c ocid1.tenancy.oc1..aaaaaaaaqqzek25x6oc72fsf7pl5pxqipakzcual27u6db3njlq76p7jopna \
+          oci compute instance launch \ 
+            --availability-domain "AHhM:US-ASHBURN-AD-1" \ 
+            --compartment-id ocid1.tenancy.oc1..aaaaaaaaqqzek25x6oc72fsf7pl5pxqipakzcual27u6db3njlq76p7jopna \
             --shape "VM.Standard.E2.1" \ 
             --display-name "CriadoDesdeGitHub" \ 
             --image-id ocid1.image.oc1.iad.aaaaaaaatwjeakck3drug6mmutcz3msodjse56qxdtwnvehldu7yds66r2wq \ 
             --ssh-authorized-keys-file /home/runner/.oci/id_rsa.pub \
-            --subnet-id ocid1.subnet.oc1.iad.aaaaaaaa36toqifidf37xsn4ha4dpow7im2io465o2f4cfjjls6ryhte2loq \
-            --wait-for-state RUNNING \
-            --query "data.id" \
-            --raw-output
+            --subnet-id ocid1.subnet.oc1.iad.aaaaaaaa36toqifidf37xsn4ha4dpow7im2io465o2f4cfjjls6ryhte2loq
