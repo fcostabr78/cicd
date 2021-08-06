@@ -53,4 +53,30 @@ jobs:
 
       - name: 'Criar uma instancia'
         run: |
-          oci compute instance launch --ssh-authorized-keys-file ~/.oci/id_rsa.pub --availability-domain "AHhM:US-ASHBURN-AD-1" --compartment-id ocid1.tenancy.oc1..aaaaaaaaqqzek25x6oc72fsf7pl5pxqipakzcual27u6db3njlq76p7jopna --shape "VM.Standard.E2.1" --display-name "CriadoDesdeGitHub" --image-id ocid1.image.oc1.iad.aaaaaaaatwjeakck3drug6mmutcz3msodjse56qxdtwnvehldu7yds66r2wq --subnet-id ocid1.subnet.oc1.iad.aaaaaaaai4plgbyqizswvrf7genqrijqks5ydx3grc4ea2cuvofcndx3krga
+          echo "::set-env name=INSTANCE_OCID::$( oci compute instance launch --ssh-authorized-keys-file ~/.oci/id_rsa.pub --availability-domain "AHhM:US-ASHBURN-AD-1" --compartment-id ocid1.tenancy.oc1..aaaaaaaaqqzek25x6oc72fsf7pl5pxqipakzcual27u6db3njlq76p7jopna --shape "VM.Standard.E2.1" --display-name "CriadoDesdeGitHub" --image-id ocid1.image.oc1.iad.aaaaaaaatwjeakck3drug6mmutcz3msodjse56qxdtwnvehldu7yds66r2wq --subnet-id ocid1.subnet.oc1.iad.aaaaaaaai4plgbyqizswvrf7genqrijqks5ydx3grc4ea2cuvofcndx3krga --wait-for-state RUNNING --raw-output)"
+
+      - name: 'Obter IP Externo'
+        run: |
+          echo "::set-env name=INSTANCE_HOST::$( \
+            oci compute instance list-vnics \
+            --instance-id ${{env.INSTANCE_OCID}} \
+            --query 'data [0]."public-ip"' \
+            --raw-output \
+          )"
+          
+      - name: 'Validar o acesso via SSH'
+        run: |
+          while ! nc -w5 -z ${{ env.INSTANCE_HOST }} 22; do
+                  sleep 5
+                  echo "SSH not available..."
+          done; echo "SSH ready!"
+      
+      - name: 'Testar Comando SSH'
+        with:
+          host: ${{ env.HOST }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          script: whoami
+    
+          
