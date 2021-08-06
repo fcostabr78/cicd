@@ -64,8 +64,12 @@ jobs:
 
           echo ::set-output name=ip1::$IP
           echo ::set-output name=ip2::${IP}
+          echo set-output name=ip3::$IP
+          echo set-output name=ip4::${IP}
           
       - name: Check outputs
         run: |
           echo ${{ steps.vars.outputs.ip1 }}
           echo ${{ steps.vars.outputs.ip2 }}
+          echo ${{ steps.vars.outputs.ip3 }}
+          echo ${{ steps.vars.outputs.ip4 }}
