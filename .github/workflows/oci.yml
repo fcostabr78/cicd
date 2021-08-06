@@ -64,7 +64,7 @@ jobs:
 
           IP=$(oci compute instance list-vnics --instance-id $INSTANCE_ID --query 'data [0]."public-ip"' --raw-output)
           echo $IP
-          echo '::set-output name=IP::${IP}'
+          echo '::set-output name=IP::hjghjghj'
 
       - name: Check outputs
         run: |
