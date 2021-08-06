@@ -62,14 +62,11 @@ jobs:
           IP=$(oci compute instance list-vnics --instance-id $INSTANCE_ID --query 'data [0]."public-ip"' --raw-output)
           echo $IP
 
-          echo ::set-output name=ip1::$IP
-          echo ::set-output name=ip2::${IP}
-          echo set-output name=ip3::$IP
-          echo set-output name=ip4::${IP}
-          
+          echo set-output name=IP::${IP}
+          echo ::set-output name=IP::${IP}
+
       - name: Check outputs
         run: |
-          echo ${{ steps.vars.outputs.ip1 }}
-          echo ${{ steps.vars.outputs.ip2 }}
-          echo ${{ steps.vars.outputs.ip3 }}
-          echo ${{ steps.vars.outputs.ip4 }}
+          echo ${{ steps.vars.outputs.IP }}
+          echo '${{ steps.vars.outputs.IP }}'
+
