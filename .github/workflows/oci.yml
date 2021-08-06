@@ -60,7 +60,7 @@ jobs:
           echo $INSTANCE_ID
           echo deveria ter mostrado
           echo "${{INSTANCE_ID}}"
-          echo "$INSTANCE_ID"
+
           echo "::set-output name=production::${{INSTANCE_ID}}"
           
       - name: Check outputs
