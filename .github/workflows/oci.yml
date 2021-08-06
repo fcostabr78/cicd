@@ -29,9 +29,33 @@ jobs:
       - name: Inicia script 
         run: echo Ola Oracle!
 
-      - name: Set outputs
-        id: vars
-        run: echo "::set-output name=production::true"
-        
-      - name: Check outputs
-        run: echo ${{ steps.vars.outputs.production }}
+      - name: 'Cria o arquivo de configuracao com base no OCI'
+        run: |
+          mkdir ~/.oci
+          echo "${{secrets.CONFIG}}" >> ~/.oci/config
+          echo "${{secrets.OCI_KEY_FILE}}" >> ~/.oci/key.pem
+          echo "${{secrets.ID_RSA}}" >> ~/.oci/id_rsa.pub
+
+      - name: 'Instalar OCI CLI'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        run: |
+          curl -L -O https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh
+          chmod +x install.sh
+          ./install.sh --accept-all-defaults
+          echo "::add-path::/home/runner/bin"
+          exec -l $SHELL
+
+      - name: 'Corrigir permissoes de arquivos criados'
+        run: |
+          oci setup repair-file-permissions --file /home/runner/.oci/config
+          oci setup repair-file-permissions --file /home/runner/.oci/key.pem
+
+      - name: 'Criar uma instancia'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        run: |
+          INSTANCE=$(oci compute instance launch --ssh-authorized-keys-file ~/.oci/id_rsa.pub --availability-domain "AHhM:US-ASHBURN-AD-1" --compartment-id ocid1.tenancy.oc1..aaaaaaaaqqzek25x6oc72fsf7pl5pxqipakzcual27u6db3njlq76p7jopna --shape "VM.Standard.E2.1" --display-name "CriadoDesdeGitHub" --image-id ocid1.image.oc1.iad.aaaaaaaatwjeakck3drug6mmutcz3msodjse56qxdtwnvehldu7yds66r2wq --subnet-id ocid1.subnet.oc1.iad.aaaaaaaai4plgbyqizswvrf7genqrijqks5ydx3grc4ea2cuvofcndx3krga --wait-for-state RUNNING)
+          INSTANCE_ID=$(echo $INSTANCE | jq -r '.data.id')
+          echo INSTANCE_ID
+          echo deveria ter mostrado
