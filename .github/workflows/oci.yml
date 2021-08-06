@@ -72,6 +72,7 @@ jobs:
           done; echo "SSH ready!"
       
       - name: 'Testar Comando SSH'
+        uses: appleboy/ssh-action@master
         with:
           host: ${{ env.HOST }}
           username: opc
