@@ -59,3 +59,9 @@ jobs:
           INSTANCE_ID=$(echo $INSTANCE | jq -r '.data.id')
           echo $INSTANCE_ID
           echo deveria ter mostrado
+          echo "${{INSTANCE_ID}}"
+          echo "$INSTANCE_ID"
+          echo "::set-output name=production::${{INSTANCE_ID}}"
+          
+      - name: Check outputs
+        run: echo ${{ steps.vars.outputs.production }}
