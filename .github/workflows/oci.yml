@@ -21,6 +21,8 @@ jobs:
     runs-on: ubuntu-latest
 
     # Steps represent a sequence of tasks that will be executed as part of the job
+    outputs:
+      foo1-output: ${{ steps.generate-output.outputs.bar-output }}
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
@@ -52,6 +54,7 @@ jobs:
           oci setup repair-file-permissions --file /home/runner/.oci/key.pem
 
       - name: 'Criar uma instancia'
+        id: instancia
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         run: |
@@ -61,12 +64,9 @@ jobs:
 
           IP=$(oci compute instance list-vnics --instance-id $INSTANCE_ID --query 'data [0]."public-ip"' --raw-output)
           echo $IP
-
-          echo set-output name=IP::${IP}
-          echo ::set-output name=IP::${IP}
+          echo '::set-output name=IP::${IP}'
 
       - name: Check outputs
         run: |
-          echo ${{ steps.vars.outputs.IP }}
-          echo '${{ steps.vars.outputs.IP }}'
+          echo "O IP criado foi ${{ steps.instancia.outputs.IP }}"
 
