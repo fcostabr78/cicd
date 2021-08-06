@@ -31,28 +31,6 @@ jobs:
       - name: Inicia script 
         run: echo Ola Oracle!
 
-      - name: 'Cria o arquivo de configuracao com base no OCI'
-        run: |
-          mkdir ~/.oci
-          echo "${{secrets.CONFIG}}" >> ~/.oci/config
-          echo "${{secrets.OCI_KEY_FILE}}" >> ~/.oci/key.pem
-          echo "${{secrets.ID_RSA}}" >> ~/.oci/id_rsa.pub
-
-      - name: 'Instalar OCI CLI'
-        env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
-        run: |
-          curl -L -O https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh
-          chmod +x install.sh
-          ./install.sh --accept-all-defaults
-          echo "::add-path::/home/runner/bin"
-          exec -l $SHELL
-
-      - name: 'Corrigir permissoes de arquivos criados'
-        run: |
-          oci setup repair-file-permissions --file /home/runner/.oci/config
-          oci setup repair-file-permissions --file /home/runner/.oci/key.pem
-
       - name: 'Criar uma instancia'
         id: instancia
         env:
@@ -60,7 +38,7 @@ jobs:
         run: |
           IP=123.123.123.123
           echo $IP
-          echo '::set-output name=IP::hjghjghj'
+          echo '::set-output name=IP::$IP'
 
       - name: Check outputs
         run: |
