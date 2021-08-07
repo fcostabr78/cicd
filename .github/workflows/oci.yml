@@ -89,7 +89,7 @@ jobs:
           port: 22
           script: whoami
       
-      - name: 'Atualizar o SO e instalar o bundler'
+      - name: 'Atualizar pacotes (Ruby, RubyGem, OCI Utils, Ansible, Terraform, Java...) e instalar o bundler'
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         uses: appleboy/ssh-action@master
@@ -98,7 +98,7 @@ jobs:
           username: opc
           key: ${{ secrets.ID_RSA_PRIV}} 
           port: 22
-          command_timeout: 300m
+          command_timeout: 700m
           script: |
            sudo yum update -y
            gem install bundler
@@ -118,7 +118,7 @@ jobs:
            sudo dnf config-manager --set-enabled PowerTools
            sudo dnf install -y ImageMagick ImageMagick-devel
 
-      - name: 'Instalar Dependencias, ImageMagick, postgree lib'
+      - name: 'Instalar Dependencias, SQLite, MySQL-Devel, Postgresql lib'
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         uses: appleboy/ssh-action@master
@@ -144,4 +144,34 @@ jobs:
            curl --silent --location https://rpm.nodesource.com/setup_8.x | sudo bash -
            curl --silent --location https://dl.yarnpkg.com/rpm/yarn.repo | sudo tee /etc/yum.repos.d/yarn.repo
            yes Y | sudo dnf install yarn -y
+ 
+      - name: 'Instalar Ruby Devel'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           yes Y | sudo yum install ruby-devel
+           
+      - name: 'Instalar Rails 6.1.0'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           gem install rails -v 6.1.0
+           rails -v
+ 
+ 
+ 
            
