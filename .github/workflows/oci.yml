@@ -88,3 +88,46 @@ jobs:
           key: ${{ secrets.ID_RSA_PRIV}} 
           port: 22
           script: whoami
+      
+      - name: 'Atualizar o SO e instalar o bundler'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          script: |
+           sudo yum update -y
+           gem install bundler
+
+      - name: 'Instalar Dependencias, ImageMagick, postgree lib'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          script: |
+           sudo dnf install -y epel-release
+           sudo dnf config-manager --set-enabled PowerTools
+           sudo dnf install -y ImageMagick ImageMagick-devel
+           yes Y | sudo dnf install sqlite-devel sqlite-libs mysql-server mysql-devel postgresql-server postgresql-devel redis memcached libxml2-devel
+           
+      - name: 'Instalar Yarn'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          script: |
+           curl --silent --location https://rpm.nodesource.com/setup_8.x | sudo bash -
+           curl --silent --location https://dl.yarnpkg.com/rpm/yarn.repo | sudo tee /etc/yum.repos.d/yarn.repo
+           yes Y | sudo dnf install yarn -y
+           
