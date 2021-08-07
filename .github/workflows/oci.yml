@@ -98,9 +98,25 @@ jobs:
           username: opc
           key: ${{ secrets.ID_RSA_PRIV}} 
           port: 22
+          command_timeout: 300m
           script: |
            sudo yum update -y
            gem install bundler
+
+      - name: 'Instalar PowerTools e ImageMagick'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           sudo dnf install -y epel-release
+           sudo dnf config-manager --set-enabled PowerTools
+           sudo dnf install -y ImageMagick ImageMagick-devel
 
       - name: 'Instalar Dependencias, ImageMagick, postgree lib'
         env:
@@ -112,9 +128,6 @@ jobs:
           key: ${{ secrets.ID_RSA_PRIV}} 
           port: 22
           script: |
-           sudo dnf install -y epel-release
-           sudo dnf config-manager --set-enabled PowerTools
-           sudo dnf install -y ImageMagick ImageMagick-devel
            yes Y | sudo dnf install sqlite-devel sqlite-libs mysql-server mysql-devel postgresql-server postgresql-devel redis memcached libxml2-devel
            
       - name: 'Instalar Yarn'
@@ -126,6 +139,7 @@ jobs:
           username: opc
           key: ${{ secrets.ID_RSA_PRIV}} 
           port: 22
+          command_timeout: 300m
           script: |
            curl --silent --location https://rpm.nodesource.com/setup_8.x | sudo bash -
            curl --silent --location https://dl.yarnpkg.com/rpm/yarn.repo | sudo tee /etc/yum.repos.d/yarn.repo
