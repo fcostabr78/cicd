@@ -172,6 +172,37 @@ jobs:
            gem install rails -v 6.1.0
            rails -v
  
- 
- 
+      - name: 'Prestine Gems'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           sudo gem pristine pg --version 1.2.3
+           sudo gem pristine puma --version 5.4.0
+           sudo gem pristine bindex --version 0.8.1
+           sudo gem pristine bootsnap --version 1.7.7
+           sudo gem pristine byebug --version 11.1.3
+           sudo gem pristine ffi --version 1.15.3
+           sudo gem pristine msgpack --version 1.4.2
+           sudo gem pristine sassc --version 2.4.0
+           sudo gem pristine bigdecimal --version 3.0.2
+           sudo gem pristine io-console --version 0.5.9
            
+      - name: 'Instalar WebPack'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           run rails webpacker:install
