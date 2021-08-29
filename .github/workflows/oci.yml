@@ -59,7 +59,7 @@ jobs:
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         run: |
-          INSTANCE=$(oci compute instance launch --ssh-authorized-keys-file ~/.oci/id_rsa.pub --availability-domain "AHhM:US-ASHBURN-AD-1" --compartment-id ocid1.tenancy.oc1..aaaaaaaaqqzek25x6oc72fsf7pl5pxqipakzcual27u6db3njlq76p7jopna --shape "VM.Standard.E2.1" --display-name "web3" --image-id ocid1.image.oc1.iad.aaaaaaaatwjeakck3drug6mmutcz3msodjse56qxdtwnvehldu7yds66r2wq --subnet-id ocid1.subnet.oc1.iad.aaaaaaaai4plgbyqizswvrf7genqrijqks5ydx3grc4ea2cuvofcndx3krga --wait-for-state RUNNING)
+          INSTANCE=$(oci compute instance launch --ssh-authorized-keys-file ~/.oci/id_rsa.pub --availability-domain "AHhM:US-ASHBURN-AD-1" --compartment-id ocid1.tenancy.oc1..aaaaaaaaqqzek25x6oc72fsf7pl5pxqipakzcual27u6db3njlq76p7jopna --shape "VM.Standard.E2.1" --display-name "web3.1" --image-id ocid1.image.oc1.iad.aaaaaaaatwjeakck3drug6mmutcz3msodjse56qxdtwnvehldu7yds66r2wq --subnet-id ocid1.subnet.oc1.iad.aaaaaaaai4plgbyqizswvrf7genqrijqks5ydx3grc4ea2cuvofcndx3krga --wait-for-state RUNNING)
           INSTANCE_ID=$(echo $INSTANCE | jq -r '.data.id')
           echo $INSTANCE_ID
 
@@ -172,3 +172,20 @@ jobs:
           script: |
            gem install rails -v 6.1.0
            rails -v
+
+      - name: 'Liberacao de Acessos'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           sudo firewall-cmd --permanent --add-port=80/tcp
+           sudo firewall-cmd --permanent --add-port=8080/tcp
+           sudo firewall-cmd --permanent --add-port=3000/tcp
+           sudo firewall-cmd --add-service=http --permanent
+           sudo firewall-cmd --reload
