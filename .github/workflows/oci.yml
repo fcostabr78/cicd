@@ -171,16 +171,3 @@ jobs:
           script: |
            gem install rails -v 6.1.0
            rails -v
-
-      - name: 'Instalar WebPack'
-        env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ steps.instancia.outputs.IP }}
-          username: opc
-          key: ${{ secrets.ID_RSA_PRIV}} 
-          port: 22
-          command_timeout: 300m
-          script: |
-           run rails webpacker:install
