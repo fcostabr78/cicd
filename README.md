@@ -358,7 +358,7 @@ jobs:
           script: |
            git config --global user.name "Fernando"
            git config --global user.email fdacosta1978@gmail.com
-           git clone -b master https://fdacosta1978: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@github.com/fcostabr78/cicd.git agenda
+           git clone -b master https://${{ secrets.GIT_USER}}:${{ secrets.GIT_SECRET}}@github.com/fcostabr78/cicd.git agenda
            cd agenda
            bundle install
            sudo gem pristine --all
