@@ -144,6 +144,7 @@ psql -h <IP_MASTER_PG> -U postgres
 > 
 ```
 # This is a basic workflow to help you get started with Actions
+
 name: CI
 
 # Controls when the workflow will run
@@ -182,6 +183,7 @@ jobs:
           echo "${{secrets.CONFIG}}" >> ~/.oci/config
           echo "${{secrets.OCI_KEY_FILE}}" >> ~/.oci/key.pem
           echo "${{secrets.ID_RSA}}" >> ~/.oci/id_rsa.pub
+
       - name: 'Instalar OCI CLI'
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
@@ -191,23 +193,28 @@ jobs:
           ./install.sh --accept-all-defaults
           echo "::add-path::/home/runner/bin"
           exec -l $SHELL
+
       - name: 'Corrigir permissoes de arquivos criados'
         run: |
           oci setup repair-file-permissions --file /home/runner/.oci/config
           oci setup repair-file-permissions --file /home/runner/.oci/key.pem
+
       - name: 'Criar uma instancia'
         id: instancia
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         run: |
-          INSTANCE=$(oci compute instance launch --ssh-authorized-keys-file ~/.oci/id_rsa.pub --availability-domain "AHhM:US-ASHBURN-AD-1" --compartment-id ocid1.tenancy.oc1..aaaaaaaaqqzek25x6oc72fsf7pl5pxqipakzcual27u6db3njlq76p7jopna --shape "VM.Standard.E2.1" --display-name "web3.1" --image-id ocid1.image.oc1.iad.aaaaaaaatwjeakck3drug6mmutcz3msodjse56qxdtwnvehldu7yds66r2wq --subnet-id ocid1.subnet.oc1.iad.aaaaaaaai4plgbyqizswvrf7genqrijqks5ydx3grc4ea2cuvofcndx3krga --wait-for-state RUNNING)
+          INSTANCE=$(oci compute instance launch --ssh-authorized-keys-file ~/.oci/id_rsa.pub --availability-domain "AHhM:US-ASHBURN-AD-1" --compartment-id ocid1.tenancy.oc1..aaaaaaaaqqzek25x6oc72fsf7pl5pxqipakzcual27u6db3njlq76p7jopna --shape "VM.Standard.E2.1" --display-name "web3.2" --image-id ocid1.image.oc1.iad.aaaaaaaatwjeakck3drug6mmutcz3msodjse56qxdtwnvehldu7yds66r2wq --subnet-id ocid1.subnet.oc1.iad.aaaaaaaai4plgbyqizswvrf7genqrijqks5ydx3grc4ea2cuvofcndx3krga --wait-for-state RUNNING)
           INSTANCE_ID=$(echo $INSTANCE | jq -r '.data.id')
           echo $INSTANCE_ID
+
           IP=$(oci compute instance list-vnics --instance-id $INSTANCE_ID --query 'data [0]."public-ip"' --raw-output)
           echo "::set-output name=IP::$(echo "$IP")"
+
       - name: Check IP
         run: |
           echo "O IP criado com sucesso foi ${{ steps.instancia.outputs.IP }}"
+
       - name: 'Validar o acesso via SSH'
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
@@ -241,6 +248,7 @@ jobs:
           script: |
            sudo yum update -y
            gem install bundler
+
       - name: 'Instalar PowerTools e ImageMagick'
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
@@ -255,6 +263,7 @@ jobs:
            sudo dnf install -y epel-release
            sudo dnf config-manager --set-enabled PowerTools
            sudo dnf install -y ImageMagick ImageMagick-devel
+
       - name: 'Instalar Dependencias, SQLite, MySQL-Devel, Postgresql lib'
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
@@ -308,6 +317,7 @@ jobs:
           script: |
            gem install rails -v 6.1.0
            rails -v
+
       - name: 'Liberacao de Acessos'
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
@@ -324,6 +334,29 @@ jobs:
            sudo firewall-cmd --permanent --add-port=3000/tcp
            sudo firewall-cmd --add-service=http --permanent
            sudo firewall-cmd --reload
+           
+      - name: 'Configuracao do Git'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           mkdir agenda
+           git init agenda
+           git config --global user.name "Fernando"
+           git config --global user.email fdacosta1978@gmail.com
+           git clone -b master https://fdacosta1978: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@github.com/fcostabr78/cicd.git agenda
+           cd agenda
+           bundle install
+           sudo gem pristine --all
+           rails db:setup
+           rails db:migrate
+           rails webpacker:install
 ```
 
 
