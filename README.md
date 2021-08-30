@@ -59,7 +59,17 @@ tenancy=ocid1.tenancy.oc1..aaaaaaaaqqzek25x6.....
 region=us-ashburn-1
 key_file=~/.oci/key.pem
 ```
+    
+3. Criar um token em https://github.com/settings/tokens para permitir clonar projeto privado. Copie o token gerado e salve num local seguro. Uma sugestão ao futuro é criar uma secret e adicionar esse valor do token lá.
 
+<table>
+    <tbody>
+        <tr>
+        <th><img align="left" width="600" src="https://objectstorage.us-ashburn-1.oraclecloud.com/n/idsvh8rxij5e/b/imagens_git/o/token.png"/></th>
+        </tr>
+    </tbody>
+</table>
+    
 
 ## 2. PostgreSQL no OCI em HA
 
@@ -368,6 +378,8 @@ Após a execução do script acima, a VM será gerada no OCI e o Actions deverá
     </tbody>
 </table>
 
+## 4. Inicializar a aplicação
+    
 Será possível acessar a VM desde a que tenham as chaves e o arquivo de configuração informado.
 
 <table>
