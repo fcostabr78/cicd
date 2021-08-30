@@ -1,0 +1,29 @@
+production:
+  adapter: postgresql
+  encoding: unicode
+  database: oradev_production
+  pool: 5
+  username: postgres
+  password: oradev
+  host: 132.145.178.48
+  port: 5432
+
+development:
+  adapter: postgresql
+  encoding: unicode
+  database: oradev_development
+  pool: 5
+  username: postgres
+  password: oradev
+  host: 132.145.178.48
+  port: 5432
+
+test:
+  adapter: postgresql
+  encoding: unicode
+  database: oradev_test
+  pool: 5
+  username: postgres
+  password: oradev
+  host: 132.145.178.48
+  port: 5432
