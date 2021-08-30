@@ -6,7 +6,7 @@ O procedimento apresentado nesta documentação descreve os passos para o instan
 
 ## 1. Pré-Requisitos
 
-### ✋ Conta no Oracle Cloud
+### ✋ Conta, APIKey e Subnet no Oracle Cloud
 
 Para criar Config File, ingresse ao Oracle Cloud, vá a Identidadee/Segurnaça >  Usuário, selecione o usuário que terá acesso, crie uma API KEY> Solicite para que o public e private PEM sejam gerados junto ao processo.
 
@@ -19,6 +19,8 @@ Para criar Config File, ingresse ao Oracle Cloud, vá a Identidadee/Segurnaça >
         </tr>
     </tbody>
 </table>
+
+📎 importante ter uma subnet criada pois ela não será provisionada. Deverá ter habilitado o ingress rules para portas 80, 8080 e 3000.
 
 
 ### ✋ Conta e segredos no projeto do GitHub
@@ -59,7 +61,7 @@ key_file=~/.oci/key.pem
 ```
 
 
-## 2. PosgreSQL no OCI em HA
+## 2. PostgreSQL no OCI em HA
 
 1. Via navegador acesse https://docs.oracle.com/pls/topic/lookup?ctx=pt-br/solutions/deploy-postgresql-db&id=github-oci-postgresql-stack-zip
 2. Informe sua credenciais de conta ao Oracle Cloud
@@ -111,7 +113,14 @@ Reiniciar o master node do PG
 psql -h <IP_MASTER_PG> -U postgres
 ```
     
-
+<table>
+    <tbody>
+        <tr>
+        <th><img align="left" width="600" src="https://objectstorage.us-ashburn-1.oraclecloud.com/n/idsvh8rxij5e/b/imagens_git/o/pg_a.png"/></th>
+        </tr>
+    </tbody>
+</table>
+    
     
 ## 3. Criar WorkLoad no GitHub Actions
 
@@ -128,13 +137,13 @@ psql -h <IP_MASTER_PG> -U postgres
 2. Ao editar o arquivo blank.yml, o renomeie para <b>oci.yml</b> e substitua o conteúdo por este abaixo
 
 > :warning: Em seu projeto você poderá ter um mais workload<br>
-> :warning: Cada workload determinará **sua condição de execução**. Para isso verifique a condição deterimada em **on** e os eventos. No exemplo abaixo o script será executado nos eventos **push** e **pull_request**
+> :warning: Cada workload determinará **sua condição de execução**. Para isso verifique a condição deterimada em **on** e os eventos. No exemplo abaixo o script será executado nos eventos **push** e **pull_request**<br>
+> :warning: **O script liberará no firewall as portas necessárias ao rails**<br>
 > :warning: No script abaixo de exemplo, o comando **oci compute instance launch** cria uma VM de tipo *VM.Standard.E2.1* e a imagem foi atribuida no parâmetro --image-id    
 > :warning: No script abaixo, no comando **oci compute instance launch**, altere o valor da propriedade *--compartment-id* e *--subnet-id * 
 > 
 ```
 # This is a basic workflow to help you get started with Actions
-
 name: CI
 
 # Controls when the workflow will run
@@ -191,7 +200,7 @@ jobs:
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         run: |
-          INSTANCE=$(oci compute instance launch --ssh-authorized-keys-file ~/.oci/id_rsa.pub --availability-domain "AHhM:US-ASHBURN-AD-1" --compartment-id ocid1.tenancy.oc1..aaaaaaaaqqzek25x6oc72fsf7pl5pxqipakzcual27u6db3njlq76p7jopna --shape "VM.Standard.E2.1" --display-name "web3" --image-id ocid1.image.oc1.iad.aaaaaaaatwjeakck3drug6mmutcz3msodjse56qxdtwnvehldu7yds66r2wq --subnet-id ocid1.subnet.oc1.iad.aaaaaaaai4plgbyqizswvrf7genqrijqks5ydx3grc4ea2cuvofcndx3krga --wait-for-state RUNNING)
+          INSTANCE=$(oci compute instance launch --ssh-authorized-keys-file ~/.oci/id_rsa.pub --availability-domain "AHhM:US-ASHBURN-AD-1" --compartment-id ocid1.tenancy.oc1..aaaaaaaaqqzek25x6oc72fsf7pl5pxqipakzcual27u6db3njlq76p7jopna --shape "VM.Standard.E2.1" --display-name "web3.1" --image-id ocid1.image.oc1.iad.aaaaaaaatwjeakck3drug6mmutcz3msodjse56qxdtwnvehldu7yds66r2wq --subnet-id ocid1.subnet.oc1.iad.aaaaaaaai4plgbyqizswvrf7genqrijqks5ydx3grc4ea2cuvofcndx3krga --wait-for-state RUNNING)
           INSTANCE_ID=$(echo $INSTANCE | jq -r '.data.id')
           echo $INSTANCE_ID
           IP=$(oci compute instance list-vnics --instance-id $INSTANCE_ID --query 'data [0]."public-ip"' --raw-output)
@@ -299,6 +308,22 @@ jobs:
           script: |
            gem install rails -v 6.1.0
            rails -v
+      - name: 'Liberacao de Acessos'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           sudo firewall-cmd --permanent --add-port=80/tcp
+           sudo firewall-cmd --permanent --add-port=8080/tcp
+           sudo firewall-cmd --permanent --add-port=3000/tcp
+           sudo firewall-cmd --add-service=http --permanent
+           sudo firewall-cmd --reload
 ```
 
 
