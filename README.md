@@ -403,3 +403,60 @@ Na console do Oracle Cloud, a VM instanciada apresenta o IP Publico atribuído. 
 </table>
     
  
+## 5. Criar Load Balancer à aplicação
+    
+1. Desde a console do OCI selecione Networking > Load Balancers
+2. Clique no botão **"Create Load Balancer"**
+3. Selecione "Load Balancer" e depois no botão "Create"
+<table>
+    <tbody>
+        <tr>
+        <th><img align="left" width="600" src="https://objectstorage.us-ashburn-1.oraclecloud.com/n/idsvh8rxij5e/b/imagens_git/o/lb1.png"/></th>
+        </tr>
+    </tbody>
+</table>
+4. Atribua um load balancer público de 100 mbps com IP efemero. Atenção para ele estar **na mesma VCN e subnet que a VM de aplicação foi criada**.
+<table>
+    <tbody>
+        <tr>
+        <th><img align="left" width="600" src="https://objectstorage.us-ashburn-1.oraclecloud.com/n/idsvh8rxij5e/b/imagens_git/o/lb2.png"/></th>
+        </tr>
+    </tbody>
+</table>
+5. Determine a distribuição Round Robin, selecione de backend set a VM criada no passo anterior. **Atenção a porta que deve ser 3000**.
+<table>
+    <tbody>
+        <tr>
+        <th><img align="left" width="600" src="https://objectstorage.us-ashburn-1.oraclecloud.com/n/idsvh8rxij5e/b/imagens_git/o/lb3.png"/></th>
+        </tr>
+    </tbody>
+</table>
+<table>
+    <tbody>
+        <tr>
+        <th><img align="left" width="600" src="https://objectstorage.us-ashburn-1.oraclecloud.com/n/idsvh8rxij5e/b/imagens_git/o/lb31.png"/></th>
+        </tr>
+    </tbody>
+</table>
+
+Realizado os passos anteriores o LB será criado e apresentado conforme abaixo
+    
+<table>
+    <tbody>
+        <tr>
+        <th><img align="left" width="600" src="https://objectstorage.us-ashburn-1.oraclecloud.com/n/idsvh8rxij5e/b/imagens_git/o/lb4.png"/></th>
+        </tr>
+    </tbody>
+</table>
+
+## 6. Acessar à aplicação desde o LB criado
+
+Basta copiar o endereço do IP criado no passo anterior e fazer o **request sem necessidade de informar a porta 3000.**
+    
+<table>
+    <tbody>
+        <tr>
+        <th><img align="left" width="600" src="https://objectstorage.us-ashburn-1.oraclecloud.com/n/idsvh8rxij5e/b/imagens_git/o/rails2.png"/></th>
+        </tr>
+    </tbody>
+</table>    
