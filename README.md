@@ -346,8 +346,6 @@ jobs:
           port: 22
           command_timeout: 300m
           script: |
-           mkdir agenda
-           git init agenda
            git config --global user.name "Fernando"
            git config --global user.email fdacosta1978@gmail.com
            git clone -b master https://fdacosta1978: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@github.com/fcostabr78/cicd.git agenda
