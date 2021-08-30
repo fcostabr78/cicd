@@ -2,7 +2,16 @@
 
 ## Introdução
 
-O procedimento apresentado nesta documentação descreve os passos para o instanciar uma (ou mmais) VM dentro do Oracle Cloud e executar um workload em Ruby On Rail. O provisionamento será realizado desde o pipeline do GitHub actions.
+O procedimento apresentado nesta documentação descreve os passos para o instanciar uma (ou mmais) Virtual Machine (VM) dentro do Oracle Cloud para execução de soluções baseadas em Ruby on Rails (RoR) com PostgreSQL. O provisionamento e configração da aplicação será disparado desde o pipeline do GitHub Actions.
+
+O procedimento está dividido em 5 etapas:
+
+- Pré-Requisitos
+- PostgreSQL no OCI em HA utilizando o Terraform (Oracle Resource Manager)
+- Criação do script de WorkLoad no GitHub Actions
+- Inicialização da Aplicação
+- Criação do Load Balancer no Oracle Cloud
+
 
 ## 1. Pré-Requisitos
 
@@ -392,7 +401,7 @@ Será possível acessar a VM desde a que tenham as chaves e o arquivo de configu
 
 Dentro da pasta do  projeto digite *rails server -b 0.0.0.0 -p 3000*
     
-Na console do Oracle Cloud, a VM instanciada apresenta o IP Publico atribuído. Basta chamar pelo navegador:
+Na console do Oracle Cloud, a VM instanciada apresenta o IP Publico atribuído. Basta chamar pelo navegador na porta 3000:
     
 <table>
     <tbody>
@@ -449,9 +458,7 @@ Realizado os passos anteriores o LB será criado e apresentado conforme abaixo
     </tbody>
 </table>
 
-## 6. Acessar à aplicação desde o LB criado
-
-Basta copiar o endereço do IP criado no passo anterior e fazer o **request sem necessidade de informar a porta 3000.**
+Copiar o endereço do IP criado no passo anterior e fazer o **request sem necessidade de informar a porta 3000.**
     
 <table>
     <tbody>
