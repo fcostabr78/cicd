@@ -370,7 +370,7 @@ Após a execução do script acima, a VM será gerada no OCI e o Actions deverá
     </tbody>
 </table>
 
-Será possível acessar a VM desde a que tenham as chaves e o arquivo de configuração informado
+Será possível acessar a VM desde a que tenham as chaves e o arquivo de configuração informado.
 
 <table>
     <tbody>
@@ -380,3 +380,16 @@ Será possível acessar a VM desde a que tenham as chaves e o arquivo de configu
     </tbody>
 </table>
 
+Dentro da pasta do  projeto digite *rails server -b 0.0.0.0 -p 3000*
+    
+Na console do Oracle Cloud, a VM instanciada apresenta o IP Publico atribuído. Basta chamar pelo navegador:
+    
+<table>
+    <tbody>
+        <tr>
+        <th><img align="left" width="600" src="https://objectstorage.us-ashburn-1.oraclecloud.com/n/idsvh8rxij5e/b/imagens_git/o/rails.png"/></th>
+        </tr>
+    </tbody>
+</table>
+    
+ 
