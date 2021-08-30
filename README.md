@@ -1,8 +1,8 @@
-# GitHub Actions + PostgreSQL em HA + Ruby On Rails no Oracle Cloud
+# GitHub Actions + PostgreSQL + RoR no Oracle Cloud
 
 ## Introdução
 
-O procedimento apresentado nesta documentação descreve os passos para o instanciar uma (ou mmais) Virtual Machine (VM) dentro do Oracle Cloud para execução de soluções baseadas em Ruby on Rails (RoR) com PostgreSQL. O provisionamento e configração da aplicação será disparado desde o pipeline do GitHub Actions.
+O procedimento apresentado nesta documentação descreve os passos para o instanciar uma (ou mais) Virtual Machine (VM) dentro do Oracle Cloud para execução de soluções baseadas em Ruby on Rails (RoR) com PostgreSQL. O provisionamento e configuração da aplicação será disparado desde o pipeline do GitHub Actions.
 
 O procedimento está dividido em 5 etapas:
 
