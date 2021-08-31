@@ -43,3 +43,4 @@ jobs:
            bundle install
            sudo gem pristine --all
            rails db:migrate
+           rails webpacker:install
