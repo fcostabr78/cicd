@@ -1,0 +1,210 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    outputs:
+      foo1-output: ${{ steps.generate-output.outputs.bar-output }}
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      # Runs a single command using the runners shell
+      - name: Inicia script 
+        run: echo Ola Oracle!
+
+      - name: 'Cria o arquivo de configuracao com base no OCI'
+        run: |
+          mkdir ~/.oci
+          echo "${{secrets.CONFIG}}" >> ~/.oci/config
+          echo "${{secrets.OCI_KEY_FILE}}" >> ~/.oci/key.pem
+          echo "${{secrets.ID_RSA}}" >> ~/.oci/id_rsa.pub
+
+      - name: 'Instalar OCI CLI'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        run: |
+          curl -L -O https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh
+          chmod +x install.sh
+          ./install.sh --accept-all-defaults
+          echo "::add-path::/home/runner/bin"
+          exec -l $SHELL
+
+      - name: 'Corrigir permissoes de arquivos criados'
+        run: |
+          oci setup repair-file-permissions --file /home/runner/.oci/config
+          oci setup repair-file-permissions --file /home/runner/.oci/key.pem
+
+      - name: 'Criar uma instancia'
+        id: instancia
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        run: |
+          INSTANCE=$(oci compute instance launch --ssh-authorized-keys-file ~/.oci/id_rsa.pub --availability-domain "AHhM:US-ASHBURN-AD-1" --compartment-id ocid1.tenancy.oc1..aaaaaaaaqqzek25x6oc72fsf7pl5pxqipakzcual27u6db3njlq76p7jopna --shape "VM.Standard.E2.1" --display-name "web3.2" --image-id ocid1.image.oc1.iad.aaaaaaaatwjeakck3drug6mmutcz3msodjse56qxdtwnvehldu7yds66r2wq --subnet-id ocid1.subnet.oc1.iad.aaaaaaaai4plgbyqizswvrf7genqrijqks5ydx3grc4ea2cuvofcndx3krga --wait-for-state RUNNING)
+          INSTANCE_ID=$(echo $INSTANCE | jq -r '.data.id')
+          echo $INSTANCE_ID
+
+          IP=$(oci compute instance list-vnics --instance-id $INSTANCE_ID --query 'data [0]."public-ip"' --raw-output)
+          echo "::set-output name=IP::$(echo "$IP")"
+
+      - name: Check IP
+        run: |
+          echo "O IP criado com sucesso foi ${{ steps.instancia.outputs.IP }}"
+
+      - name: 'Validar o acesso via SSH'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        run: |
+          while ! nc -w5 -z ${{ steps.instancia.outputs.IP }} 22; do
+                  sleep 5
+                  echo "SSH not available..."
+          done; echo "SSH ready!"
+      
+      - name: 'Testar Comando SSH'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          script: whoami
+      
+      - name: 'Atualizar pacotes (Ruby, RubyGem, OCI Utils, Ansible, Terraform, Java...) e instalar o bundler'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 700m
+          script: |
+           sudo yum update -y
+           gem install bundler
+
+      - name: 'Instalar PowerTools e ImageMagick'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           sudo dnf install -y epel-release
+           sudo dnf config-manager --set-enabled PowerTools
+           sudo dnf install -y ImageMagick ImageMagick-devel
+
+      - name: 'Instalar Dependencias, SQLite, MySQL-Devel, Postgresql lib'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          script: |
+           yes Y | sudo dnf install sqlite-devel sqlite-libs mysql-server mysql-devel postgresql-server postgresql-devel redis memcached libxml2-devel
+           
+      - name: 'Instalar Yarn'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           curl --silent --location https://rpm.nodesource.com/setup_8.x | sudo bash -
+           curl --silent --location https://dl.yarnpkg.com/rpm/yarn.repo | sudo tee /etc/yum.repos.d/yarn.repo
+           yes Y | sudo dnf install yarn -y
+ 
+      - name: 'Instalar Ruby Devel'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           yes Y | sudo yum install ruby-devel
+           
+      - name: 'Instalar Rails 6.1.0'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           gem install rails -v 6.1.0
+           rails -v
+
+      - name: 'Liberacao de Acessos'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           sudo firewall-cmd --permanent --add-port=80/tcp
+           sudo firewall-cmd --permanent --add-port=8080/tcp
+           sudo firewall-cmd --permanent --add-port=3000/tcp
+           sudo firewall-cmd --add-service=http --permanent
+           sudo firewall-cmd --reload
+           
+      - name: 'Configuracao do Git'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           git config --global user.name "Fernando"
+           git config --global user.email fdacosta1978@gmail.com
+           git clone -b master https://${{ secrets.GIT_USER}}:${{ secrets.GIT_SECRET}}@${{ secrets.GIT_CLONE_URL}} agenda
+           cd agenda
+           bundle install
+           sudo gem pristine --all
+           rails db:setup
+           rails db:migrate
+           rails webpacker:install
+           
+           
+
+           
+
