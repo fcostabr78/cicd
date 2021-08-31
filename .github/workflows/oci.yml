@@ -10,6 +10,7 @@ on:
     paths-ignore:
       - '**/README.md'
       - '**/.github/workflows/oci.yml'
+      - '**/.github/workflows/update_agenda.yml'
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
