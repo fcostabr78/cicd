@@ -36,7 +36,7 @@ Para criar Config File, ingresse ao Oracle Cloud, vá a Identidadee/Segurnaça >
 
 Nos seguintes passos será criado o script oci.yml dentro do GitHub Action.
 
-Esse script necessitará de <b>sete segredos: CONFIG, OCI_KEY_FILE, ID_RSA_PRIV e ID_RSA</b>. Outros 3 segredos são para as credenciais do Git, são eles: GIT_USER (nome do usuario git), GIT_SECRET (token gerado no git) e GIT_CLONE_URL (path do projeto que queremos fazer o pull, exemplo: github.com/fcostabr78/cicd.git)
+Esse script necessitará de sete segredos: **CONFIG**, **OCI_KEY_FILE**, **ID_RSA_PRIV** e **ID_RSA**. Outros 3 segredos são para as credenciais do Git, são eles: **GIT_USER** (nome do usuario git), **GIT_SECRET** (token gerado no git) e **GIT_CLONE_URL** (path do projeto que queremos fazer o pull, exemplo: github.com/fcostabr78/cicd.git)
 
 ```
 echo "${{secrets.CONFIG}}" >> ~/.oci/config
