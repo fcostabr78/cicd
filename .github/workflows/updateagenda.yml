@@ -31,7 +31,6 @@ jobs:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         uses: appleboy/ssh-action@master
         with:
-          token: ${{ secrets.PAT_TOKEN }}
           host: "132.145.195.56,129.213.16.119"
           username: opc
           key: ${{ secrets.ID_RSA_PRIV}} 
