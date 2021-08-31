@@ -7,7 +7,9 @@ on:
   # Triggers the workflow on push or pull request events but only for the main branch
   push:
     branches: [ master ]
-    paths-ignore: ['**/README.md']
+    paths-ignore:
+      - '**/README.md'
+      - '**/.github/workflows/update_agenda.yml'
   workflow_dispatch:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
@@ -23,12 +25,12 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-
       - name: 'Actualizacion de proyecto'
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         uses: appleboy/ssh-action@master
         with:
+          token: ${{ secrets.PAT_TOKEN }
           host: "132.145.195.56,129.213.16.119"
           username: opc
           key: ${{ secrets.ID_RSA_PRIV}} 
