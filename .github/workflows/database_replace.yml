@@ -1,0 +1,62 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the workflow will run
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    outputs:
+      foo1-output: ${{ steps.generate-output.outputs.bar-output }}
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      - name: 'Actualizacion DB File'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: "132.145.178.26"
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           cd agenda/config
+           cat <<EOF > database.yml
+           production:
+             adapter: postgresql
+             encoding: unicode
+             database: oradev_production
+             pool: 5
+             username: ${{ secrets.DB_USER}}
+             password: ${{ secrets.DB_PASSWORD}} 
+             host: ${{ secrets.DB_HOST}}
+             port: ${{ secrets.DB_PORT}}
+           development:
+             adapter: postgresql
+             encoding: unicode
+             database: oradev_development
+             pool: 5
+             username: ${{ secrets.DB_USER}}
+             password: ${{ secrets.DB_PASSWORD}} 
+             host: ${{ secrets.DB_HOST}}
+             port: ${{ secrets.DB_PORT}}
+           test:
+             adapter: postgresql
+             encoding: unicode
+             database: oradev_test
+             pool: 5
+             username: ${{ secrets.DB_USER}}
+             password: ${{ secrets.DB_PASSWORD}} 
+             host: ${{ secrets.DB_HOST}}
+             port: ${{ secrets.DB_PORT}}
+           EOF
