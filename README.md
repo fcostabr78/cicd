@@ -139,7 +139,8 @@ psql -h <IP_MASTER_PG> -U postgres
         </tr>
     </tbody>
 </table>
-    
+
+**Para instalr o PostgreSQl Client no Ubuntu: $sudo apt install postgresql-client**
     
 ## 3. Criar WorkLoad no GitHub Actions
 
