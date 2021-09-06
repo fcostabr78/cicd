@@ -47,13 +47,21 @@ jobs:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         run: |
           sudo apt-get install -y jq
-         
+
+      - name: 'Resgata Ips'
+        id: instancia
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        run: |
+          IPs= $(oci compute instance list-vnics --compartment-id ocid1.tenancy.oc1..aaaaaaaaqqzek25x6oc72fsf7pl5pxqipakzcual27u6db3njlq76p7jopna | jq -r '.data[]."public-ip"')
+          echo "::set-output name=IPs::$(echo "$IPs")"
+          
       - name: 'Actualizacion DB File'
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         uses: appleboy/ssh-action@master
         with:
-          host: $(oci compute instance list-vnics --compartment-id ocid1.tenancy.oc1..aaaaaaaaqqzek25x6oc72fsf7pl5pxqipakzcual27u6db3njlq76p7jopna | jq -r '.data[]."public-ip"')
+          host: ${{ steps.instancia.outputs.IPs }}
           username: opc
           key: ${{ secrets.ID_RSA_PRIV}} 
           port: 22
