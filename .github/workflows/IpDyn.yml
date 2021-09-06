@@ -54,6 +54,9 @@ jobs:
         run: |
           INSTANCE=$(oci compute instance list-vnics --compartment-id "ocid1.tenancy.oc1..aaaaaaaaqqzek25x6oc72fsf7pl5pxqipakzcual27u6db3njlq76p7jopna")
           IPs=$(echo $INSTANCE | jq -r '.data[]."public-ip"' --raw-output)
+          IPs="${IPs//'%'/'%25'}"
+          IPs="${IPs//$'\n'/'%0A'}"
+          IPs="${IPs//$'\r'/'%0D'}"
           echo $IPs
 
           echo "::set-output name=IPs::$(echo "$IPs")"
