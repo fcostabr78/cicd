@@ -52,7 +52,7 @@ jobs:
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         run: |
-          INSTANCE=$(oci compute instance launch --ssh-authorized-keys-file ~/.oci/id_rsa.pub --availability-domain "AHhM:US-ASHBURN-AD-1" --compartment-id ocid1.tenancy.oc1..aaaaaaaaqqzek25x6oc72fsf7pl5pxqipakzcual27u6db3njlq76p7jopna --shape "VM.Standard.E2.1" --display-name "web3.2" --image-id ocid1.image.oc1.iad.aaaaaaaatwjeakck3drug6mmutcz3msodjse56qxdtwnvehldu7yds66r2wq --subnet-id ocid1.subnet.oc1.iad.aaaaaaaai4plgbyqizswvrf7genqrijqks5ydx3grc4ea2cuvofcndx3krga --wait-for-state RUNNING)
+          INSTANCE=$(oci compute instance launch --ssh-authorized-keys-file ~/.oci/id_rsa.pub --availability-domain "AHhM:US-ASHBURN-AD-1" --compartment-id ${{secret.OCI_COMPARTMENT_ID}} --shape "VM.Standard.E2.1" --display-name "app_server" --image-id ocid1.image.oc1.iad.aaaaaaaatwjeakck3drug6mmutcz3msodjse56qxdtwnvehldu7yds66r2wq --subnet-id ${{secret.OCI_SUBNET_ID}} --wait-for-state RUNNING)
           INSTANCE_ID=$(echo $INSTANCE | jq -r '.data.id')
           echo $INSTANCE_ID
 
@@ -183,7 +183,7 @@ jobs:
            sudo firewall-cmd --add-service=http --permanent
            sudo firewall-cmd --reload
            
-      - name: 'Configuracao do Git'
+      - name: 'Deploy do projeto'
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         uses: appleboy/ssh-action@master
@@ -200,6 +200,35 @@ jobs:
            cd agenda
            bundle install
            sudo gem pristine --all
+           cat <<EOF > /config/database.yml
+           production:
+             adapter: postgresql
+             encoding: unicode
+             database: oradev_production
+             pool: 5
+             username: ${{ secrets.DB_USER}}
+             password: ${{ secrets.DB_PASSWORD}} 
+             host: ${{ secrets.DB_HOST}}
+             port: ${{ secrets.DB_PORT}}
+           development:
+             adapter: postgresql
+             encoding: unicode
+             database: oradev_development
+             pool: 5
+             username: ${{ secrets.DB_USER}}
+             password: ${{ secrets.DB_PASSWORD}} 
+             host: ${{ secrets.DB_HOST}}
+             port: ${{ secrets.DB_PORT}}
+           test:
+             adapter: postgresql
+             encoding: unicode
+             database: oradev_test
+             pool: 5
+             username: ${{ secrets.DB_USER}}
+             password: ${{ secrets.DB_PASSWORD}} 
+             host: ${{ secrets.DB_HOST}}
+             port: ${{ secrets.DB_PORT}}
+           EOF
            rails db:setup
            rails db:migrate
            rails webpacker:install
