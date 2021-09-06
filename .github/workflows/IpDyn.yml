@@ -4,9 +4,10 @@ name: IpDyn
 
 # Controls when the workflow will run
 on:
-  # Allows you to run this workflow manually from the Actions tab
+  # Triggers the workflow on push or pull request events but only for the main branch
   workflow_dispatch:
 
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
   build:
@@ -19,14 +20,18 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-      
+
+      # Runs a single command using the runners shell
+      - name: Inicia script 
+        run: echo Ola Oracle!
+
       - name: 'Cria o arquivo de configuracao com base no OCI'
         run: |
           mkdir ~/.oci
           echo "${{secrets.CONFIG}}" >> ~/.oci/config
           echo "${{secrets.OCI_KEY_FILE}}" >> ~/.oci/key.pem
           echo "${{secrets.ID_RSA}}" >> ~/.oci/id_rsa.pub
-          
+
       - name: 'Instalar OCI CLI'
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
@@ -42,24 +47,21 @@ jobs:
           oci setup repair-file-permissions --file /home/runner/.oci/config
           oci setup repair-file-permissions --file /home/runner/.oci/key.pem
 
-      - name: 'Resgata Ips'
+      - name: 'Listar ips'
         id: instancia
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         run: |
-          IPs= $(oci)
+          INSTANCE=$(oci compute instance list-vnics --compartment-id "ocid1.tenancy.oc1..aaaaaaaaqqzek25x6oc72fsf7pl5pxqipakzcual27u6db3njlq76p7jopna")
+          IPs=$(echo $INSTANCE | jq -r '.data[]."public-ip"')
           echo $IPs
+
           echo "::set-output name=IPs::$(echo "$IPs")"
-          
-      - name: 'Actualizacion DB File'
-        env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ steps.instancia.outputs.IPs }}
-          username: opc
-          key: ${{ secrets.ID_RSA_PRIV}} 
-          port: 22
-          command_timeout: 300m
-          script: |
-           echo "teste" > teste.txt
+
+      - name: Check IP
+        run: |
+          echo "Os IPs criados ${{ steps.instancia.outputs.IPs }}"
+
+    
+
+           
