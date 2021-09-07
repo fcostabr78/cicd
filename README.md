@@ -401,7 +401,7 @@ jobs:
 ```
 
 
-Após a execução do script acima, a VM será gerada no OCI e o Actions deverá informar que a execução foi exitosa.
+:partying_face: Após a execução do script acima, a VM com RoR estará provisionado no OCI, o deploy estará realizado e o Actions deverá informar que a execução foi exitosa.
 
 <table>
     <tbody>
