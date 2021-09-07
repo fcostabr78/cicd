@@ -36,7 +36,7 @@ Para criar Config File, ingresse ao Oracle Cloud, vá a Identidadee/Segurnaça >
 
 Nos seguintes passos será criado o script oci.yml dentro do GitHub Action.
 
-Esse script necessitará de sete segredos: **CONFIG**, **OCI_KEY_FILE**, **ID_RSA_PRIV** e **ID_RSA**. Outros 3 segredos são para as credenciais do Git, são eles: **GIT_USER** (nome do usuario git), **GIT_SECRET** (token gerado no git) e **GIT_CLONE_URL** (path do projeto que queremos fazer o pull, exemplo: github.com/fcostabr78/cicd.git)
+Esse script necessitará de nove segredos inicialmente: **CONFIG**, **OCI_KEY_FILE**, **ID_RSA_PRIV** e **ID_RSA**. Outros 4 segredos são: **GIT_USER** (nome do usuario git), **GIT_SECRET** (token gerado no git) e **GIT_CLONE_URL** (path do projeto que queremos fazer o pull, exemplo: github.com/fcostabr78/cicd.git). O ultimo segredo é o **OCI_COMPARTMENT_ID** e **OCI_SUBNET_ID** que deverão ter o OCI_ID correspondente a localização que será realizada o provisionamento dos servidores de aplicação.
 
 ```
 echo "${{secrets.CONFIG}}" >> ~/.oci/config
@@ -44,7 +44,7 @@ echo "${{secrets.OCI_KEY_FILE}}" >> ~/.oci/key.pem
 echo "${{secrets.ID_RSA}}" >> ~/.oci/id_rsa.pub
 ```
 1. Para gerar o secret no GitHub :octocat:, em seu projeto vá a Setting, depois Secrets. 
-2. Clique no botão "New Repository Secret" para criar as 7 secrets.
+2. Clique no botão "New Repository Secret" para criar as secrets descritas acima.
 
 <table>
     <tbody>
@@ -55,7 +55,7 @@ echo "${{secrets.ID_RSA}}" >> ~/.oci/id_rsa.pub
 </table>
 
 ⚠️ **os valores dos segredos CONFIG e OCI_KEY_FILE foram obtidos no passo anterior, via criação da API KEY na console do Oracle Cloud**<br>
-⚠️ o valor do segredo **ID_RSA** pode ser obtido localmente com *$ cat /home/<user>/.ssh/id_rsa.pem*<br>
+⚠️ o valor do segredo **ID_RSA** pode ser obtido localmente com *$ cat /home/<user>/.ssh/id_rsa.pub*<br>
 ⚠️ o valor do segredo **ID_RSA_PRIV** pode ser obtido localmente com *$cat /home/fernando/.ssh/id_rsa*<br>
     
 Fique atento ao path de key_file que deverá ser informado no valor do segredo do CONFIG. O arquivo gerado na criação da API KEY anterior terá o seguinte formato:
@@ -140,7 +140,9 @@ psql -h <IP_MASTER_PG> -U postgres
     </tbody>
 </table>
 
-**Para instalr o PostgreSQl Client no Ubuntu: $sudo apt install postgresql-client**
+**Para instalar o PostgreSQl Client no Ubuntu: $sudo apt install postgresql-client**
+    
+Crie as seguintes secrets no GitHub: **DB_USER**, **DB_PASSWORD**, **DB_HOST** e **DB_PORT**. O password a ser informado deve ser o registrado no passo anterior e o host é o IP publico do master node provisionado ao PostgreSQL. 
     
 ## 3. Criar WorkLoad no GitHub Actions
 
@@ -160,8 +162,7 @@ psql -h <IP_MASTER_PG> -U postgres
 > :warning: Cada workload determinará **sua condição de execução**. Para isso verifique a condição deterimada em **on** e os eventos. No exemplo abaixo o script será executado nos eventos **push** e **pull_request**<br>
 > :warning: **O script liberará no firewall as portas necessárias ao rails**<br>
 > :warning: No script abaixo de exemplo, o comando **oci compute instance launch** cria uma VM de tipo *VM.Standard.E2.1* e a imagem foi atribuida no parâmetro --image-id    
-> :warning: No script abaixo, no comando **oci compute instance launch**, altere o valor da propriedade *--compartment-id* e *--subnet-id * 
-> 
+ 
 ```
 # This is a basic workflow to help you get started with Actions
 
@@ -170,13 +171,6 @@ name: CI
 # Controls when the workflow will run
 on:
   # Triggers the workflow on push or pull request events but only for the main branch
-  push:
-    branches: [ main ]
-    paths-ignore: ['**/README.md']
-  pull_request:
-    branches: [ main ]
-    paths-ignore: ['**/README.md']
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
@@ -224,7 +218,7 @@ jobs:
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         run: |
-          INSTANCE=$(oci compute instance launch --ssh-authorized-keys-file ~/.oci/id_rsa.pub --availability-domain "AHhM:US-ASHBURN-AD-1" --compartment-id ocid1.tenancy.oc1..aaaaaaaaqqzek25x6oc72fsf7pl5pxqipakzcual27u6db3njlq76p7jopna --shape "VM.Standard.E2.1" --display-name "web3.2" --image-id ocid1.image.oc1.iad.aaaaaaaatwjeakck3drug6mmutcz3msodjse56qxdtwnvehldu7yds66r2wq --subnet-id ocid1.subnet.oc1.iad.aaaaaaaai4plgbyqizswvrf7genqrijqks5ydx3grc4ea2cuvofcndx3krga --wait-for-state RUNNING)
+          INSTANCE=$(oci compute instance launch --ssh-authorized-keys-file ~/.oci/id_rsa.pub --availability-domain "AHhM:US-ASHBURN-AD-1" --compartment-id ${{secrets.OCI_COMPARTMENT_ID}} --shape "VM.Standard.E2.1" --display-name "app_server" --image-id ocid1.image.oc1.iad.aaaaaaaatwjeakck3drug6mmutcz3msodjse56qxdtwnvehldu7yds66r2wq --subnet-id ${{secrets.OCI_SUBNET_ID}} --wait-for-state RUNNING)
           INSTANCE_ID=$(echo $INSTANCE | jq -r '.data.id')
           echo $INSTANCE_ID
 
@@ -355,7 +349,7 @@ jobs:
            sudo firewall-cmd --add-service=http --permanent
            sudo firewall-cmd --reload
            
-      - name: 'Configuracao do Git'
+      - name: 'Deploy do projeto'
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         uses: appleboy/ssh-action@master
@@ -372,6 +366,35 @@ jobs:
            cd agenda
            bundle install
            sudo gem pristine --all
+           cat <<EOF > /config/database.yml
+           production:
+             adapter: postgresql
+             encoding: unicode
+             database: oradev_production
+             pool: 5
+             username: ${{ secrets.DB_USER}}
+             password: ${{ secrets.DB_PASSWORD}} 
+             host: ${{ secrets.DB_HOST}}
+             port: ${{ secrets.DB_PORT}}
+           development:
+             adapter: postgresql
+             encoding: unicode
+             database: oradev_development
+             pool: 5
+             username: ${{ secrets.DB_USER}}
+             password: ${{ secrets.DB_PASSWORD}} 
+             host: ${{ secrets.DB_HOST}}
+             port: ${{ secrets.DB_PORT}}
+           test:
+             adapter: postgresql
+             encoding: unicode
+             database: oradev_test
+             pool: 5
+             username: ${{ secrets.DB_USER}}
+             password: ${{ secrets.DB_PASSWORD}} 
+             host: ${{ secrets.DB_HOST}}
+             port: ${{ secrets.DB_PORT}}
+           EOF
            rails db:setup
            rails db:migrate
            rails webpacker:install
