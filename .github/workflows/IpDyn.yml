@@ -52,8 +52,8 @@ jobs:
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         run: |
-          INSTANCE=$(oci compute instance list-vnics --compartment-id "ocid1.tenancy.oc1..aaaaaaaaqqzek25x6oc72fsf7pl5pxqipakzcual27u6db3njlq76p7jopna")
-          IPs=$(echo $INSTANCE | jq -r '.data[]."public-ip"' --raw-output)
+          INSTANCE=$( oci compute instance list-vnics --compartment-id ${{secret.OCI_COMPARTMENT_ID}} --query "data[?\"display-name\"=='app_server'].\"public-ip\"")
+          IPs=$(echo $INSTANCE | jq '.[]' --raw-output)
           IPs="${IPs//$'\n'/','}"
           echo $IPs
 
