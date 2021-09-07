@@ -11,6 +11,7 @@ on:
     paths-ignore:
       - '**/README.md'
       - '**/.github/workflows/update_agenda.yml'
+      - '**/.github/workflows/oci.yml'
   workflow_dispatch:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
@@ -26,12 +27,52 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
+
+      # Runs a single command using the runners shell
+      - name: Inicia script 
+        run: echo Ola Oracle!
+
+      - name: 'Cria o arquivo de configuracao com base no OCI'
+        run: |
+          mkdir ~/.oci
+          echo "${{secrets.CONFIG}}" >> ~/.oci/config
+          echo "${{secrets.OCI_KEY_FILE}}" >> ~/.oci/key.pem
+          echo "${{secrets.ID_RSA}}" >> ~/.oci/id_rsa.pub
+
+      - name: 'Instalar el OCI CLI'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        run: |
+          curl -L -O https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh
+          chmod +x install.sh
+          ./install.sh --accept-all-defaults
+          echo "::add-path::/home/runner/bin"
+          exec -l $SHELL
+
+      - name: 'Arreglar permisos'
+        run: |
+          oci setup repair-file-permissions --file /home/runner/.oci/config
+          oci setup repair-file-permissions --file /home/runner/.oci/key.pem
+
+      - name: 'Obtener los IPs'
+        id: instancia
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        run: |
+          INSTANCE=$( oci compute instance list-vnics --compartment-id ${{secret.OCI_COMPARTMENT_ID}} --query "data[?\"display-name\"=='app_server'].\"public-ip\"")
+          IPs=$(echo $INSTANCE | jq '.[]' --raw-output)
+          IPs="${IPs//$'\n'/','}"
+          IPs="${IPs//$'\r'/','}"
+          echo $IPs
+
+          echo "::set-output name=IPs::$(echo "$IPs")"
+
       - name: 'Actualizacion de proyecto'
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         uses: appleboy/ssh-action@master
         with:
-          host: "132.145.195.56,129.213.16.119"
+          host: ${{ steps.instancia.outputs.IPs }}
           username: opc
           key: ${{ secrets.ID_RSA_PRIV}} 
           port: 22
