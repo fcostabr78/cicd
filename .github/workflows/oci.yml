@@ -200,7 +200,7 @@ jobs:
            cd agenda
            bundle install
            sudo gem pristine --all
-           cat <<EOF > /config/database.yml
+           cat <<EOF > config/database.yml
            production:
              adapter: postgresql
              encoding: unicode
