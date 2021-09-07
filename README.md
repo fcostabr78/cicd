@@ -163,7 +163,7 @@ Crie as seguintes secrets no GitHub: **DB_USER**, **DB_PASSWORD**, **DB_HOST** e
 > :warning: **O script liberará no firewall as portas necessárias ao rails**<br>
 > :warning: No script abaixo de exemplo, o comando **oci compute instance launch** cria uma VM de tipo *VM.Standard.E2.1* e a imagem foi atribuida no parâmetro --image-id    
  
-```
+``` yml
 # This is a basic workflow to help you get started with Actions
 
 name: CI
@@ -401,7 +401,7 @@ jobs:
 ```
 
 
-:partying_face: Após a execução do script acima, a VM com RoR estará provisionado no OCI, com nome "app_server", assim como o deploy estará realizado e o Actions deverá informar que a execução foi exitosa.
+> :partying_face: Após a execução do script acima, a VM com RoR estará provisionado no OCI, com nome "app_server", assim como o deploy estará realizado e o Actions deverá informar que a execução foi exitosa.
 
 <table>
     <tbody>
