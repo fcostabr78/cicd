@@ -491,3 +491,95 @@ Copiar o endereço do IP criado no passo anterior e fazer o **request sem necess
         </tr>
     </tbody>
 </table>    
+
+## 6. Criar WorkLoad **updateagenda.yml** para atualização automatica via GitHub Actions
+    
+``` yml
+# This is a basic workflow to help you get started with Actions
+
+name: UpdateAgenda
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - '**/README.md'
+      - '**/.github/workflows/update_agenda.yml'
+      - '**/.github/workflows/oci.yml'
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    outputs:
+      foo1-output: ${{ steps.generate-output.outputs.bar-output }}
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      # Runs a single command using the runners shell
+      - name: Inicia script 
+        run: echo Ola Oracle!
+
+      - name: 'Cria o arquivo de configuracao com base no OCI'
+        run: |
+          mkdir ~/.oci
+          echo "${{secrets.CONFIG}}" >> ~/.oci/config
+          echo "${{secrets.OCI_KEY_FILE}}" >> ~/.oci/key.pem
+          echo "${{secrets.ID_RSA}}" >> ~/.oci/id_rsa.pub
+
+      - name: 'Instalar el OCI CLI'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        run: |
+          curl -L -O https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh
+          chmod +x install.sh
+          ./install.sh --accept-all-defaults
+          echo "::add-path::/home/runner/bin"
+          exec -l $SHELL
+
+      - name: 'Arreglar permisos'
+        run: |
+          oci setup repair-file-permissions --file /home/runner/.oci/config
+          oci setup repair-file-permissions --file /home/runner/.oci/key.pem
+
+      - name: 'Obtener los IPs'
+        id: instancia
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        run: |
+          INSTANCE=$( oci compute instance list-vnics --compartment-id ${{secrets.OCI_COMPARTMENT_ID}} --query "data[?\"display-name\"=='app_server'].\"public-ip\"")
+          IPs=$(echo $INSTANCE | jq '.[]' --raw-output)
+          IPs="${IPs//$'\n'/','}"
+          IPs="${IPs//$'\r'/','}"
+          echo $IPs
+
+          echo "::set-output name=IPs::$(echo "$IPs")"
+
+      - name: 'Actualizacion de proyecto'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IPs }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           rm -rf agenda
+           git clone -b master https://${{ secrets.GIT_USER}}:${{ secrets.GIT_SECRET}}@${{ secrets.GIT_CLONE_URL}} agenda
+           cd agenda
+           bundle install
+           sudo gem pristine --all
+           rails db:migrate
+           rails webpacker:install
+```
