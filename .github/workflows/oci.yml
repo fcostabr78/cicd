@@ -204,7 +204,7 @@ jobs:
            production:
              adapter: postgresql
              encoding: unicode
-             database: oradev_production
+             database: ${{ secrets.DB_PREFIX}}_production
              pool: 5
              username: ${{ secrets.DB_USER}}
              password: ${{ secrets.DB_PASSWORD}} 
@@ -213,7 +213,7 @@ jobs:
            development:
              adapter: postgresql
              encoding: unicode
-             database: oradev_development
+             database: ${{ secrets.DB_PREFIX}}_development
              pool: 5
              username: ${{ secrets.DB_USER}}
              password: ${{ secrets.DB_PASSWORD}} 
@@ -222,7 +222,7 @@ jobs:
            test:
              adapter: postgresql
              encoding: unicode
-             database: oradev_test
+             database: ${{ secrets.DB_PREFIX}}_test
              pool: 5
              username: ${{ secrets.DB_USER}}
              password: ${{ secrets.DB_PASSWORD}} 
