@@ -142,7 +142,7 @@ psql -h <IP_MASTER_PG> -U postgres
 
 **Para instalar o PostgreSQl Client no Ubuntu: $sudo apt install postgresql-client**
     
-Crie as seguintes secrets no GitHub: **DB_USER**, **DB_PASSWORD**, **DB_HOST** e **DB_PORT**. O password a ser informado deve ser o registrado no passo anterior e o host é o IP publico do master node provisionado ao PostgreSQL. 
+Crie as seguintes secrets no GitHub: **DB_USER**, **DB_PREFIX**, **DB_PASSWORD**, **DB_HOST** e **DB_PORT**. O password a ser informado deve ser o registrado no passo anterior e o host é o IP publico do master node provisionado ao PostgreSQL. 
     
 ## 3. Criar WorkLoad no GitHub Actions
 
@@ -370,7 +370,7 @@ jobs:
            production:
              adapter: postgresql
              encoding: unicode
-             database: oradev_production
+             database: ${{ secrets.DB_PREFIX}}_production
              pool: 5
              username: ${{ secrets.DB_USER}}
              password: ${{ secrets.DB_PASSWORD}} 
@@ -379,7 +379,7 @@ jobs:
            development:
              adapter: postgresql
              encoding: unicode
-             database: oradev_development
+             database: ${{ secrets.DB_PREFIX}}_development
              pool: 5
              username: ${{ secrets.DB_USER}}
              password: ${{ secrets.DB_PASSWORD}} 
@@ -388,7 +388,7 @@ jobs:
            test:
              adapter: postgresql
              encoding: unicode
-             database: oradev_test
+             database: ${{ secrets.DB_PREFIX}}_test
              pool: 5
              username: ${{ secrets.DB_USER}}
              password: ${{ secrets.DB_PASSWORD}} 
