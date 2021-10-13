@@ -66,7 +66,7 @@ jobs:
       - name: Assing LB
         id: assign_lb 
         run: |
-            oci lb backend create --backend-set-name agenda_backend_set --load-balancer-id ${{secrets.OCI_LB_ID}} --ip-address ${{ steps.instancia.outputs.IP }} --port 3000
+            oci lb backend create --backend-set-name bs_lb_2021-1012-0951 --load-balancer-id ${{secrets.OCI_LB_ID}} --ip-address ${{ steps.instancia.outputs.IP }} --port 3000
             
       - name: 'Validar o acesso via SSH'
         env:
