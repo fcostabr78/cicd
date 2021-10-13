@@ -65,8 +65,6 @@ jobs:
           
       - name: Assing LB
         id: assign_lb 
-        env: |
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         run: |
             oci lb backend create --backend-set-name agenda_backend_set --load-balancer-id ${{secrets.OCI_LB_ID}} --ip-address ${{ steps.instancia.outputs.IP }} --port 3000
             
