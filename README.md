@@ -8,9 +8,10 @@ O procedimento está dividido em 5 etapas:
 
 - Pré-Requisitos
 - PostgreSQL no OCI em HA utilizando o Terraform (Oracle Resource Manager)
+- Criação do Load Balancer no Oracle Cloud (obter o OCID e backendset name)
 - Criação do script de WorkLoad no GitHub Actions
 - Inicialização da Aplicação
-- Criação do Load Balancer no Oracle Cloud
+
 
 
 ## 1. Pré-Requisitos
@@ -36,7 +37,8 @@ Para criar Config File, ingresse ao Oracle Cloud, vá a Identidadee/Segurnaça >
 
 Nos seguintes passos será criado o script oci.yml dentro do GitHub Action.
 
-Esse script necessitará de nove segredos inicialmente: **CONFIG**, **OCI_KEY_FILE**, **ID_RSA_PRIV** e **ID_RSA**. Outros 4 segredos são: **GIT_USER** (nome do usuario git), **GIT_SECRET** (token gerado no git) e **GIT_CLONE_URL** (path do projeto que queremos fazer o pull, exemplo: github.com/fcostabr78/cicd.git). O ultimo segredo é o **OCI_COMPARTMENT_ID** e **OCI_SUBNET_ID** que deverão ter o OCI_ID correspondente a localização que será realizada o provisionamento dos servidores de aplicação.
+Esse script necessitará de dez segredos inicialmente: **CONFIG**, **OCI_KEY_FILE**, **ID_RSA_PRIV** e **ID_RSA**. Outros 4 segredos são: **GIT_USER** (nome do usuario git), **GIT_SECRET** (token gerado no git) e **GIT_CLONE_URL** (path do projeto que queremos fazer o pull, exemplo: github.com/fcostabr78/cicd.git). O ultimo segredo é o **OCI_COMPARTMENT_ID** e **OCI_SUBNET_ID** que deverão ter o OCI_ID correspondente a localização que será realizada o provisionamento dos servidores de aplicação.
+Crie uma secret chamada **PROJECT_NAME**. NO meu caso AGENDA, que será o nome da pasta que desejo que seja criada e onde estará o projeto clonado do GIT.
 
 ```
 echo "${{secrets.CONFIG}}" >> ~/.oci/config
@@ -79,7 +81,40 @@ key_file=~/.oci/key.pem
     </tbody>
 </table>
     
+### Criação do Balanceador de Carga
+    
+1. Desde a console do OCI selecione Networking > Load Balancers
+2. Clique no botão **"Create Load Balancer"**
+3. Selecione "Load Balancer" e depois no botão "Create"
+<table>
+    <tbody>
+        <tr>
+        <th><img align="left" width="600" src="https://objectstorage.us-ashburn-1.oraclecloud.com/n/idsvh8rxij5e/b/imagens_git/o/lb1.png"/></th>
+        </tr>
+    </tbody>
+</table>
+4. Atribua um load balancer público de 100 mbps com IP efemero. Atenção para ele estar **na mesma VCN e subnet que a VM de aplicação foi criada**.
+<table>
+    <tbody>
+        <tr>
+        <th><img align="left" width="600" src="https://objectstorage.us-ashburn-1.oraclecloud.com/n/idsvh8rxij5e/b/imagens_git/o/lb2.png"/></th>
+        </tr>
+    </tbody>
+</table>
+5. Determine a distribuição Round Robin, não atribuia nenhuma VM pois *será adicionada automaticamente pelo script*. 
+    **Atenção a porta que deve ser 3000**.
 
+<table>
+    <tbody>
+        <tr>
+        <th><img align="left" width="600" src="https://objectstorage.us-ashburn-1.oraclecloud.com/n/idsvh8rxij5e/b/imagens_git/o/lb31.png"/></th>
+        </tr>
+    </tbody>
+</table>
+
+⚠️ Crie duas secrets chamadas **OCI_LB_ID** e **OCI_LB_BS_NAME**. O valor da primeira é o OCIID do balanceador de carga e o valor da segunda é nome do backendset criado.
+    
+    
 ## 2. PostgreSQL no OCI em HA
 
 1. Via navegador acesse https://docs.oracle.com/pls/topic/lookup?ctx=pt-br/solutions/deploy-postgresql-db&id=github-oci-postgresql-stack-zip
@@ -197,7 +232,6 @@ jobs:
           echo "${{secrets.CONFIG}}" >> ~/.oci/config
           echo "${{secrets.OCI_KEY_FILE}}" >> ~/.oci/key.pem
           echo "${{secrets.ID_RSA}}" >> ~/.oci/id_rsa.pub
-
       - name: 'Instalar OCI CLI'
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
@@ -207,12 +241,10 @@ jobs:
           ./install.sh --accept-all-defaults
           echo "::add-path::/home/runner/bin"
           exec -l $SHELL
-
       - name: 'Corrigir permissoes de arquivos criados'
         run: |
           oci setup repair-file-permissions --file /home/runner/.oci/config
           oci setup repair-file-permissions --file /home/runner/.oci/key.pem
-
       - name: 'Criar uma instancia'
         id: instancia
         env:
@@ -221,14 +253,17 @@ jobs:
           INSTANCE=$(oci compute instance launch --ssh-authorized-keys-file ~/.oci/id_rsa.pub --availability-domain "AHhM:US-ASHBURN-AD-1" --compartment-id ${{secrets.OCI_COMPARTMENT_ID}} --shape "VM.Standard.E2.1" --display-name "app_server" --image-id ocid1.image.oc1.iad.aaaaaaaatwjeakck3drug6mmutcz3msodjse56qxdtwnvehldu7yds66r2wq --subnet-id ${{secrets.OCI_SUBNET_ID}} --wait-for-state RUNNING)
           INSTANCE_ID=$(echo $INSTANCE | jq -r '.data.id')
           echo $INSTANCE_ID
-
           IP=$(oci compute instance list-vnics --instance-id $INSTANCE_ID --query 'data [0]."public-ip"' --raw-output)
           echo "::set-output name=IP::$(echo "$IP")"
-
       - name: Check IP
         run: |
           echo "O IP criado com sucesso foi ${{ steps.instancia.outputs.IP }}"
-
+          
+      - name: Assing LB
+        id: assign_lb 
+        run: |
+            oci lb backend create --backend-set-name ${{secrets.OCI_LB_BS_NAME}} --load-balancer-id ${{secrets.OCI_LB_ID}} --ip-address ${{ steps.instancia.outputs.IP }} --port 3000
+            
       - name: 'Validar o acesso via SSH'
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
@@ -262,7 +297,6 @@ jobs:
           script: |
            sudo yum update -y
            gem install bundler
-
       - name: 'Instalar PowerTools e ImageMagick'
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
@@ -277,7 +311,6 @@ jobs:
            sudo dnf install -y epel-release
            sudo dnf config-manager --set-enabled PowerTools
            sudo dnf install -y ImageMagick ImageMagick-devel
-
       - name: 'Instalar Dependencias, SQLite, MySQL-Devel, Postgresql lib'
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
@@ -331,7 +364,6 @@ jobs:
           script: |
            gem install rails -v 6.1.0
            rails -v
-
       - name: 'Liberacao de Acessos'
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
@@ -362,8 +394,8 @@ jobs:
           script: |
            git config --global user.name "Fernando"
            git config --global user.email fdacosta1978@gmail.com
-           git clone -b master https://${{ secrets.GIT_USER}}:${{ secrets.GIT_SECRET}}@${{ secrets.GIT_CLONE_URL}} agenda
-           cd agenda
+           git clone -b master https://${{ secrets.GIT_USER}}:${{ secrets.GIT_SECRET}}@${{ secrets.GIT_CLONE_URL}} ${{ secrets.PROJECT_NAME}}
+           cd ${{ secrets.PROJECT_NAME}}
            bundle install
            sudo gem pristine --all
            cat <<EOF > config/database.yml
@@ -398,6 +430,71 @@ jobs:
            rails db:setup
            rails db:migrate
            rails webpacker:install
+           
+      - name: 'Configuracao do Servico'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           cd ${{ secrets.PROJECT_NAME}}/config
+           mkdir puma
+           cd puma
+           cat <<EOF > development.rb
+           rails_env = "development"
+           environment rails_env
+           app_dir = "/home/opc/${{ secrets.PROJECT_NAME}}" # Update me with your root rails app path
+           #bind  "unix://#{app_dir}/puma.sock"
+           bind "tcp://0.0.0.0:3000"
+           pidfile "#{app_dir}/puma.pid"
+           state_path "#{app_dir}/puma.state"
+           directory "#{app_dir}/"
+           stdout_redirect "#{app_dir}/log/puma.stdout.log", "#{app_dir}/log/puma.stderr.log", true
+           workers 2
+           threads 1,2
+           activate_control_app "unix://#{app_dir}/pumactl.sock"
+           prune_bundler
+           EOF
+           cat <<EOF > production.rb
+           rails_env = "production"
+           environment rails_env
+           app_dir = "/home/opc/${{ secrets.PROJECT_NAME}}" # Update me with your root rails app path
+           #bind  "unix://#{app_dir}/puma.sock"
+           bind "tcp://0.0.0.0:3000"
+           pidfile "#{app_dir}/puma.pid"
+           state_path "#{app_dir}/puma.state"
+           directory "#{app_dir}/"
+           stdout_redirect "#{app_dir}/log/puma.stdout.log", "#{app_dir}/log/puma.stderr.log", true
+           workers 2
+           threads 1,2
+           activate_control_app "unix://#{app_dir}/pumactl.sock"
+           prune_bundler
+           EOF
+           cd /etc/systemd/system/
+           sudo bash -c 'cat <<EOF > puma.service
+           [Unit]
+           Description=Puma HTTP Server
+           After=network.target
+           [Service]
+           Type=simple
+           WorkingDirectory=/home/opc/${{ secrets.PROJECT_NAME}}
+           Environment=RAILS_ENV=development
+           User=opc
+           ExecStart=/usr/local/bin/puma -C /home/opc/${{ secrets.PROJECT_NAME}}/config/puma/development.rb
+           Restart=always
+           KillMode=process
+           [Install]
+           WantedBy=multi-user.target
+           EOF
+           '
+           sudo chmod 644 puma.service
+           sudo systemctl enable puma.service
+           sudo service puma start
 ```
 
 
@@ -413,66 +510,12 @@ jobs:
 
 ## 4. Inicializar a aplicação
     
-Será possível acessar a VM desde a que tenham as chaves e o arquivo de configuração informado.
-
-<table>
-    <tbody>
-        <tr>
-        <th><img align="left" width="600" src="https://objectstorage.us-ashburn-1.oraclecloud.com/n/idsvh8rxij5e/b/imagens_git/o/access_local.png"/></th>
-        </tr>
-    </tbody>
-</table>
-
-Dentro da pasta do  projeto digite *rails server -b 0.0.0.0 -p 3000*
-    
-Na console do Oracle Cloud, a VM instanciada apresenta o IP Publico atribuído. Basta chamar pelo navegador na porta 3000:
-    
-<table>
-    <tbody>
-        <tr>
-        <th><img align="left" width="600" src="https://objectstorage.us-ashburn-1.oraclecloud.com/n/idsvh8rxij5e/b/imagens_git/o/rails.png"/></th>
-        </tr>
-    </tbody>
-</table>
+O script anterior já inicia a aplicação considerando o arquivo development.rb através do PUMA. Logo nada deve ser feito
     
  
-## 5. Criar Load Balancer à aplicação
+## 5. Testar a aplicação
     
-1. Desde a console do OCI selecione Networking > Load Balancers
-2. Clique no botão **"Create Load Balancer"**
-3. Selecione "Load Balancer" e depois no botão "Create"
-<table>
-    <tbody>
-        <tr>
-        <th><img align="left" width="600" src="https://objectstorage.us-ashburn-1.oraclecloud.com/n/idsvh8rxij5e/b/imagens_git/o/lb1.png"/></th>
-        </tr>
-    </tbody>
-</table>
-4. Atribua um load balancer público de 100 mbps com IP efemero. Atenção para ele estar **na mesma VCN e subnet que a VM de aplicação foi criada**.
-<table>
-    <tbody>
-        <tr>
-        <th><img align="left" width="600" src="https://objectstorage.us-ashburn-1.oraclecloud.com/n/idsvh8rxij5e/b/imagens_git/o/lb2.png"/></th>
-        </tr>
-    </tbody>
-</table>
-5. Determine a distribuição Round Robin, selecione de backend set a VM criada no passo anterior. **Atenção a porta que deve ser 3000**.
-<table>
-    <tbody>
-        <tr>
-        <th><img align="left" width="600" src="https://objectstorage.us-ashburn-1.oraclecloud.com/n/idsvh8rxij5e/b/imagens_git/o/lb3.png"/></th>
-        </tr>
-    </tbody>
-</table>
-<table>
-    <tbody>
-        <tr>
-        <th><img align="left" width="600" src="https://objectstorage.us-ashburn-1.oraclecloud.com/n/idsvh8rxij5e/b/imagens_git/o/lb31.png"/></th>
-        </tr>
-    </tbody>
-</table>
-
-Realizado os passos anteriores o LB será criado e apresentado conforme abaixo
+Realizado a execução do scrip anterior, assim como os pré-requisitos, basta chamar no navegador pelo IP do balanceador de carga:
     
 <table>
     <tbody>
