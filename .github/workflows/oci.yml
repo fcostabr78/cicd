@@ -238,7 +238,81 @@ jobs:
            rails db:migrate
            rails webpacker:install
            
+      - name: 'Configuracao do Servico'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           cd agenda/config
+           mkdir puma
+           cd puma
+           cat <<EOF > development.rb
+           rails_env = "development"
+           environment rails_env
+           app_dir = "/home/opc/agenda" # Update me with your root rails app path
+           #bind  "unix://#{app_dir}/puma.sock"
+           bind "tcp://0.0.0.0:3000"
+           pidfile "#{app_dir}/puma.pid"
+           state_path "#{app_dir}/puma.state"
+           directory "#{app_dir}/"
+
+           stdout_redirect "#{app_dir}/log/puma.stdout.log", "#{app_dir}/log/puma.stderr.log", true
+
+           workers 2
+           threads 1,2
+
+           activate_control_app "unix://#{app_dir}/pumactl.sock"
+
+           prune_bundler
+           EOF
            
+           cat <<EOF > production.rb
+           rails_env = "prodcution"
+           environment rails_env
+           app_dir = "/home/opc/agenda" # Update me with your root rails app path
+           #bind  "unix://#{app_dir}/puma.sock"
+           bind "tcp://0.0.0.0:3000"
+           pidfile "#{app_dir}/puma.pid"
+           state_path "#{app_dir}/puma.state"
+           directory "#{app_dir}/"
+
+           stdout_redirect "#{app_dir}/log/puma.stdout.log", "#{app_dir}/log/puma.stderr.log", true
+
+           workers 2
+           threads 1,2
+
+           activate_control_app "unix://#{app_dir}/pumactl.sock"
+
+           prune_bundler
+           EOF
+           cd /etc/systemd/system/
+           cat <<EOF > puma.service
+           [Unit]
+           Description=Puma HTTP Server
+           After=network.target
+
+           [Service]
+           Type=simple
+           WorkingDirectory=/home/opc/agenda
+           Environment=RAILS_ENV=development
+           User=opc
+
+           ExecStart=/usr/local/bin/puma -C /home/opc/agenda/config/puma/development.rb
+           Restart=always
+           KillMode=process
+
+           [Install]
+           WantedBy=multi-user.target
+           EOF
+           sudo chmod 644 puma.service
+           sudo systemctl enable puma.service
+           sudo service puma start 
 
            
 
