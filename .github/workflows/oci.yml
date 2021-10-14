@@ -201,8 +201,8 @@ jobs:
           script: |
            git config --global user.name "Fernando"
            git config --global user.email fdacosta1978@gmail.com
-           git clone -b master https://${{ secrets.GIT_USER}}:${{ secrets.GIT_SECRET}}@${{ secrets.GIT_CLONE_URL}} agenda
-           cd agenda
+           git clone -b master https://${{ secrets.GIT_USER}}:${{ secrets.GIT_SECRET}}@${{ secrets.GIT_CLONE_URL}} ${{ secrets.PROJECT_NAME}}
+           cd ${{ secrets.PROJECT_NAME}}
            bundle install
            sudo gem pristine --all
            cat <<EOF > config/database.yml
@@ -249,13 +249,13 @@ jobs:
           port: 22
           command_timeout: 300m
           script: |
-           cd agenda/config
+           cd ${{ secrets.PROJECT_NAME}}/config
            mkdir puma
            cd puma
            cat <<EOF > development.rb
            rails_env = "development"
            environment rails_env
-           app_dir = "/home/opc/agenda" # Update me with your root rails app path
+           app_dir = "/home/opc/${{ secrets.PROJECT_NAME}}" # Update me with your root rails app path
            #bind  "unix://#{app_dir}/puma.sock"
            bind "tcp://0.0.0.0:3000"
            pidfile "#{app_dir}/puma.pid"
@@ -275,7 +275,7 @@ jobs:
            cat <<EOF > production.rb
            rails_env = "prodcution"
            environment rails_env
-           app_dir = "/home/opc/agenda" # Update me with your root rails app path
+           app_dir = "/home/opc/${{ secrets.PROJECT_NAME}}" # Update me with your root rails app path
            #bind  "unix://#{app_dir}/puma.sock"
            bind "tcp://0.0.0.0:3000"
            pidfile "#{app_dir}/puma.pid"
@@ -299,11 +299,11 @@ jobs:
 
            [Service]
            Type=simple
-           WorkingDirectory=/home/opc/agenda
+           WorkingDirectory=/home/opc/${{ secrets.PROJECT_NAME}}
            Environment=RAILS_ENV=development
            User=opc
 
-           ExecStart=/usr/local/bin/puma -C /home/opc/agenda/config/puma/development.rb
+           ExecStart=/usr/local/bin/puma -C /home/opc/${{ secrets.PROJECT_NAME}}/config/puma/development.rb
            Restart=always
            KillMode=process
 
@@ -313,6 +313,3 @@ jobs:
            sudo chmod 644 puma.service
            sudo systemctl enable puma.service
            sudo service puma start 
-
-           
-
