@@ -181,7 +181,7 @@ jobs:
            prune_bundler
            EOF
            cd /etc/systemd/system/
-           sudo cat <<EOF > puma.service
+           sudo bash -c 'cat <<EOF > puma.service
            [Unit]
            Description=Puma HTTP Server
            After=network.target
@@ -199,4 +199,5 @@ jobs:
            [Install]
            WantedBy=multi-user.target
            EOF
+           '
            sudo chmod 644 puma.service
