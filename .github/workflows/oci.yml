@@ -180,3 +180,23 @@ jobs:
 
            prune_bundler
            EOF
+           cd /etc/systemd/system/
+           sudo cat <<EOF > puma.service
+           [Unit]
+           Description=Puma HTTP Server
+           After=network.target
+
+           [Service]
+           Type=simple
+           WorkingDirectory=/home/opc/${{ secrets.PROJECT_NAME}}
+           Environment=RAILS_ENV=development
+           User=opc
+
+           ExecStart=/usr/local/bin/puma -C /home/opc/${{ secrets.PROJECT_NAME}}/config/puma/development.rb
+           Restart=always
+           KillMode=process
+
+           [Install]
+           WantedBy=multi-user.target
+           EOF
+           sudo chmod 644 puma.service
