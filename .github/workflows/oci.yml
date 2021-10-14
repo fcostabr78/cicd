@@ -63,6 +63,11 @@ jobs:
         run: |
           echo "O IP criado com sucesso foi ${{ steps.instancia.outputs.IP }}"
           
+      - name: Assing LB
+        id: assign_lb 
+        run: |
+            oci lb backend create --backend-set-name ${{secrets.OCI_LB_BS_NAME}} --load-balancer-id ${{secrets.OCI_LB_ID}} --ip-address ${{ steps.instancia.outputs.IP }} --port 3000
+            
       - name: 'Validar o acesso via SSH'
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
@@ -82,7 +87,107 @@ jobs:
           key: ${{ secrets.ID_RSA_PRIV}} 
           port: 22
           script: whoami
+      
+      - name: 'Atualizar pacotes (Ruby, RubyGem, OCI Utils, Ansible, Terraform, Java...) e instalar o bundler'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 700m
+          script: |
+           sudo yum update -y
+           gem install bundler
 
+      - name: 'Instalar PowerTools e ImageMagick'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           sudo dnf install -y epel-release
+           sudo dnf config-manager --set-enabled PowerTools
+           sudo dnf install -y ImageMagick ImageMagick-devel
+
+      - name: 'Instalar Dependencias, SQLite, MySQL-Devel, Postgresql lib'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          script: |
+           yes Y | sudo dnf install sqlite-devel sqlite-libs mysql-server mysql-devel postgresql-server postgresql-devel redis memcached libxml2-devel
+           
+      - name: 'Instalar Yarn'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           curl --silent --location https://rpm.nodesource.com/setup_8.x | sudo bash -
+           curl --silent --location https://dl.yarnpkg.com/rpm/yarn.repo | sudo tee /etc/yum.repos.d/yarn.repo
+           yes Y | sudo dnf install yarn -y
+ 
+      - name: 'Instalar Ruby Devel'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           yes Y | sudo yum install ruby-devel
+           
+      - name: 'Instalar Rails 6.1.0'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           gem install rails -v 6.1.0
+           rails -v
+
+      - name: 'Liberacao de Acessos'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           sudo firewall-cmd --permanent --add-port=80/tcp
+           sudo firewall-cmd --permanent --add-port=8080/tcp
+           sudo firewall-cmd --permanent --add-port=3000/tcp
+           sudo firewall-cmd --add-service=http --permanent
+           sudo firewall-cmd --reload
+           
       - name: 'Deploy do projeto'
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
@@ -98,6 +203,8 @@ jobs:
            git config --global user.email fdacosta1978@gmail.com
            git clone -b master https://${{ secrets.GIT_USER}}:${{ secrets.GIT_SECRET}}@${{ secrets.GIT_CLONE_URL}} ${{ secrets.PROJECT_NAME}}
            cd ${{ secrets.PROJECT_NAME}}
+           bundle install
+           sudo gem pristine --all
            cat <<EOF > config/database.yml
            production:
              adapter: postgresql
@@ -127,7 +234,10 @@ jobs:
              host: ${{ secrets.DB_HOST}}
              port: ${{ secrets.DB_PORT}}
            EOF
-          
+           rails db:setup
+           rails db:migrate
+           rails webpacker:install
+           
       - name: 'Configuracao do Servico'
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
@@ -201,3 +311,5 @@ jobs:
            EOF
            '
            sudo chmod 644 puma.service
+           sudo systemctl enable puma.service
+           sudo service puma start 
