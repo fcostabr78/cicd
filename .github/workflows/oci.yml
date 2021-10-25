@@ -240,10 +240,10 @@ jobs:
            EOF
            gem install bundler --pre
            bundle install
-           no N | yarn install --check-files
+           yarn install --check-files -n
            rails db:setup
            rails db:migrate
-           no N | rails webpacker:install
+           rails webpacker:install -n
            
       - name: 'Configuracao do Servico'
         env:
