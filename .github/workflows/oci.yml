@@ -234,8 +234,6 @@ jobs:
              host: ${{ secrets.DB_HOST}}
              port: ${{ secrets.DB_PORT}}
            EOF
-           yarn install --check-files -n
-           rails webpacker:install -n
 
       - name: 'Setting do projeto e db'
         env:
@@ -251,10 +249,12 @@ jobs:
            cd ${{ secrets.PROJECT_NAME}}           
            rvm install "ruby-2.6.3"
            gem install bundler:2.2.29
+           yarn install --check-files -n
            bundle install
            sudo gem pristine --all
            rails db:setup
            rails db:migrate
+           rails webpacker:install -n
            
       - name: 'Configuracao do Servico'
         env:
