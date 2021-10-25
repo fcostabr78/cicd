@@ -202,7 +202,11 @@ jobs:
            git config --global user.name "Fernando"
            git config --global user.email fdacosta1978@gmail.com
            git clone -b master https://${{ secrets.GIT_USER}}:${{ secrets.GIT_SECRET}}@${{ secrets.GIT_CLONE_URL}} ${{ secrets.PROJECT_NAME}}
-           cd ${{ secrets.PROJECT_NAME}}
+           cd ${{ secrets.PROJECT_NAME}}           
+           sudo yum install curl gpg gcc gcc-c++ make patch autoconf automake bison libffi-devel libtool patch readline-devel sqlite-devel zlib-devel openssl-devel
+           curl -sSL https://get.rvm.io | bash
+           rvm install "ruby-2.6.3"
+           gem install bundler:2.2.29
            bundle install
            sudo gem pristine --all
            cat <<EOF > config/database.yml
@@ -234,9 +238,12 @@ jobs:
              host: ${{ secrets.DB_HOST}}
              port: ${{ secrets.DB_PORT}}
            EOF
+           gem install bundler --pre
+           bundle install
+           no N | yarn install --check-files
            rails db:setup
            rails db:migrate
-           rails webpacker:install
+           no N | rails webpacker:install
            
       - name: 'Configuracao do Servico'
         env:
