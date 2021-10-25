@@ -289,7 +289,7 @@ jobs:
           command_timeout: 300m
           script: |
            cd ${{ secrets.PROJECT_NAME}}           
-           bundle install
+           gem install bundler:2.2.29 && bundle install
            
       - name: 'Gem Prestine'
         env:
