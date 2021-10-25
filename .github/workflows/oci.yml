@@ -238,6 +238,8 @@ jobs:
              host: ${{ secrets.DB_HOST}}
              port: ${{ secrets.DB_PORT}}
            EOF
+           rvm install "ruby-2.6.3"
+           gem install bundler:2.2.29
            gem install bundler --pre
            bundle install
            yarn install --check-files -n
