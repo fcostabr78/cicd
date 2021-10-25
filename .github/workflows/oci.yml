@@ -291,7 +291,7 @@ jobs:
            cd ${{ secrets.PROJECT_NAME}}           
            bundle install
            
-      - name: 'Setting do projeto e db'
+      - name: 'Gem Prestine'
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         uses: appleboy/ssh-action@master
@@ -304,9 +304,21 @@ jobs:
           script: |
            cd ${{ secrets.PROJECT_NAME}}           
            sudo gem pristine --all
+
+      - name: 'Setting do db'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           cd ${{ secrets.PROJECT_NAME}}           
            rails db:setup
            rails db:migrate
-           rails webpacker:install -n
            
       - name: 'Configuracao do Servico'
         env:
