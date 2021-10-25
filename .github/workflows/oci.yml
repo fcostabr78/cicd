@@ -205,7 +205,6 @@ jobs:
            cd ${{ secrets.PROJECT_NAME}}           
            sudo yum install curl gpg gcc gcc-c++ make patch autoconf automake bison libffi-devel libtool patch readline-devel sqlite-devel zlib-devel openssl-devel
            curl -sSL https://get.rvm.io | bash
-           rvm install "ruby-2.6.3"
            cat <<EOF > config/database.yml
            production:
              adapter: postgresql
@@ -235,7 +234,6 @@ jobs:
              host: ${{ secrets.DB_HOST}}
              port: ${{ secrets.DB_PORT}}
            EOF
-           rvm install "ruby-2.6.3"
            yarn install --check-files -n
            rails webpacker:install -n
 
