@@ -235,7 +235,7 @@ jobs:
              port: ${{ secrets.DB_PORT}}
            EOF
 
-      - name: 'Setting do projeto e db'
+      - name: 'Setting Ruby 2.6.3'
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         uses: appleboy/ssh-action@master
@@ -248,9 +248,61 @@ jobs:
           script: |
            cd ${{ secrets.PROJECT_NAME}}           
            rvm install "ruby-2.6.3"
+
+      - name: 'Setting Bundler 2.2.29'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           cd ${{ secrets.PROJECT_NAME}}           
            gem install bundler:2.2.29
+
+      - name: 'Setting Yarn Check Files'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           cd ${{ secrets.PROJECT_NAME}}           
            yarn install --check-files -n
+
+      - name: 'Bundle Install'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           cd ${{ secrets.PROJECT_NAME}}           
            bundle install
+           
+      - name: 'Setting do projeto e db'
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.instancia.outputs.IP }}
+          username: opc
+          key: ${{ secrets.ID_RSA_PRIV}} 
+          port: 22
+          command_timeout: 300m
+          script: |
+           cd ${{ secrets.PROJECT_NAME}}           
            sudo gem pristine --all
            rails db:setup
            rails db:migrate
