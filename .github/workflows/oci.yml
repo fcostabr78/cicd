@@ -316,9 +316,8 @@ jobs:
           port: 22
           command_timeout: 300m
           script: |
-           cd ${{ secrets.PROJECT_NAME}}           
-           rails db:setup
-           rails db:migrate
+           cd ${{ secrets.PROJECT_NAME}}
+           source ~/.rvm/scripts/rvm; rvm use 2.6.3; rails db:setup; rails db:migrate
            
       - name: 'Configuracao do Servico'
         env:
