@@ -288,9 +288,9 @@ jobs:
           port: 22
           command_timeout: 300m
           script: |
-           cd ${{ secrets.PROJECT_NAME}}           
+           cd ${{ secrets.PROJECT_NAME}}
            gem install bundler:2.2.29
-           source ~/.rvm/scripts/rvm; rvm use 2.6.3; bundle install
+           source ~/.rvm/scripts/rvm; rvm use 2.6.3; gem install bundler:2.2.29; bundle install
       - name: 'Gem Prestine'
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
