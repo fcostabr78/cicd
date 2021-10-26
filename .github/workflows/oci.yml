@@ -289,10 +289,8 @@ jobs:
           command_timeout: 300m
           script: |
            cd ${{ secrets.PROJECT_NAME}}           
-           sudo gem install bundler:2.2.29
-           rvm use 2.6.3
-           bundle install
-           
+           gem install bundler:2.2.29
+           source ~/.rvm/scripts/rvm; rvm use 2.6.3; bundle install
       - name: 'Gem Prestine'
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
