@@ -56,7 +56,7 @@ echo "${{secrets.ID_RSA}}" >> ~/.oci/id_rsa.pub
     </tbody>
 </table>
 
-⚠️ **os valores dos segredos CONFIG e OCI_KEY_FILE foram obtidos no passo anterior, via criação da API KEY na console do Oracle Cloud**<br>
+⚠️ **os valores dos segredos CONFIG e OCI_KEY_FILE foram obtidos no passo anterior, via criação da API KEY na console do Oracle Cloud**. O OCI_KEY_FILE tem como valor a PEM privada que fizemos download na criação da API KEY<br>
 ⚠️ o valor do segredo **ID_RSA** pode ser obtido localmente com *$ cat /home/<user>/.ssh/id_rsa.pub*<br>
 ⚠️ o valor do segredo **ID_RSA_PRIV** pode ser obtido localmente com *$cat /home/fernando/.ssh/id_rsa*<br>
     
