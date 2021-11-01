@@ -146,6 +146,9 @@ $ ssh -i /home/fernando/.ssh/id_rsa opc@<IP_MASTER_PG>
 $ sudo su postgres
 $ psql -c "ALTER USER postgres WITH PASSWORD '<novasenha>'"
 
+Validar o path dos arquivos que deverão ser alterados em:
+psql -c "SHOW hba_file;"
+
 $ vim /var/lib/pgsql/13/data/postgresql.conf
   - retirar o comentário (#) do parametro listen_address
   - alterar o valor da propriedade de listen_address de [localhost] para *
@@ -158,11 +161,15 @@ adicionar as linhas:
 
 $ exit
 
-$ sudo firewall-cmd --permanent --zone=trusted --add-source=0.0.0.0/0 
+$ sudo firewall-cmd --permanent --zone=trusted --add-source=0.0.0.0/0
+$ sudo firewall-cmd --permanent --zone=trusted --add-source=::0/0 
 $ sudo firewall-cmd --permanent --zone=trusted --add-port=5432/tcp
 $ sudo firewall-cmd --reload
 
 Reiniciar o master node do PG
+$ sudo systemctl restart postgresql-13
+
+$ exit
 
 psql -h <IP_MASTER_PG> -U postgres
 ```
