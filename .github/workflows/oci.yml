@@ -330,6 +330,7 @@ jobs:
           port: 22
           command_timeout: 300m
           script: |
+           gem install puma
            cd ${{ secrets.PROJECT_NAME}}/config
            mkdir puma
            cd puma
@@ -383,7 +384,7 @@ jobs:
            Environment=RAILS_ENV=development
            User=opc
 
-           ExecStart=/usr/local/bin/puma -C /home/opc/${{ secrets.PROJECT_NAME}}/config/puma/development.rb
+           ExecStart=/bin/bash -c "sudo -u opc /home/opc/bin/puma -C /home/opc/${{ secrets.PROJECT_NAME}}/config/puma/development.rb"
            Restart=always
            KillMode=process
 
