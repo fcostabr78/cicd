@@ -52,7 +52,7 @@ jobs:
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         run: |
-          INSTANCE=$(oci compute instance launch --ssh-authorized-keys-file ~/.oci/id_rsa.pub --availability-domain "AHhM:US-ASHBURN-AD-1" --compartment-id ${{secrets.OCI_COMPARTMENT_ID}} --shape "VM.Standard.E2.1" --display-name "app_server" --image-id ocid1.image.oc1.iad.aaaaaaaatwjeakck3drug6mmutcz3msodjse56qxdtwnvehldu7yds66r2wq --subnet-id ${{secrets.OCI_SUBNET_ID}} --wait-for-state RUNNING)
+          INSTANCE=$(oci compute instance launch --ssh-authorized-keys-file ~/.oci/id_rsa.pub --availability-domain "CUbS:US-ASHBURN-AD-1" --compartment-id ${{secrets.OCI_COMPARTMENT_ID}} --shape "VM.Standard.E2.1" --display-name "app_server" --image-id ocid1.image.oc1.iad.aaaaaaaatwjeakck3drug6mmutcz3msodjse56qxdtwnvehldu7yds66r2wq --subnet-id ${{secrets.OCI_SUBNET_ID}} --wait-for-state RUNNING)
           INSTANCE_ID=$(echo $INSTANCE | jq -r '.data.id')
           echo $INSTANCE_ID
 
